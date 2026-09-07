@@ -29,7 +29,7 @@ install_deps() {
     # pre-installed modern Debian live-build (e.g. put in place by CI) is NOT
     # clobbered by a distro's possibly-EOL packaged version.
     apt-get install -y --no-install-recommends \
-        debootstrap squashfs-tools xorriso \
+        debootstrap debian-archive-keyring squashfs-tools xorriso \
         mtools dosfstools syslinux-common syslinux-utils isolinux \
         grub-pc-bin grub-efi-amd64-bin \
         ca-certificates gnupg curl rsync \

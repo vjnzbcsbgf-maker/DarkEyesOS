@@ -50,7 +50,7 @@ jobs:
           LB_DEB="live-build_20250505+deb13u1_all.deb"
           curl -fsSLO "https://deb.debian.org/debian/pool/main/l/live-build/${LB_DEB}"
           sudo apt-get install -y --no-install-recommends \
-            debootstrap squashfs-tools xorriso mtools dosfstools \
+            debootstrap debian-archive-keyring squashfs-tools xorriso mtools dosfstools \
             syslinux-common syslinux-utils isolinux \
             grub-pc-bin grub-efi-amd64-bin ca-certificates rsync
           sudo dpkg -i "./${LB_DEB}" || sudo apt-get -f install -y
