@@ -22,5 +22,8 @@ if [ -d /usr/share/darkeyes/persistence.d ]; then
     cp -a /usr/share/darkeyes/persistence.d/. /etc/darkeyes/persistence/ 2>/dev/null || true
 fi
 
+# Additional Software: reinstall the persisted package list into RAM at boot.
+systemctl enable darkeyes-additional-software.service 2>/dev/null || true
+
 # The setup tool lives in /usr/local/bin/darkeyes-persistence (shipped separately).
 echo "[darkeyes] 0700 done"

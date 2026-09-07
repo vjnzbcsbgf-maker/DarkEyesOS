@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- DarkEyesOS emblem: a watchful eye that stays shut on your data. -->
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="75%">
+      <stop offset="0%" stop-color="#141821"/>
+      <stop offset="100%" stop-color="#05070b"/>
+    </radialGradient>
+    <linearGradient id="iris" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3aa0ff"/>
+      <stop offset="100%" stop-color="#1257d6"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#3aa0ff" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#3aa0ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1024" height="1024" rx="180" fill="url(#bg)"/>
+  <circle cx="512" cy="430" r="300" fill="url(#glow)"/>
+
+  <!-- Eye outline (almond) -->
+  <path d="M172 430 C 300 250, 724 250, 852 430 C 724 610, 300 610, 172 430 Z"
+        fill="#0b0e14" stroke="#7fb4ff" stroke-width="10"/>
+
+  <!-- Iris + pupil -->
+  <circle cx="512" cy="430" r="132" fill="url(#iris)"/>
+  <circle cx="512" cy="430" r="60" fill="#05070b"/>
+  <circle cx="470" cy="392" r="26" fill="#eaf3ff" opacity="0.9"/>
+
+  <!-- Padlock shackle over the pupil: the eye is "locked" on your data -->
+  <path d="M470 402 v-26 a42 42 0 0 1 84 0 v26"
+        fill="none" stroke="#eaf3ff" stroke-width="14" stroke-linecap="round"/>
+  <rect x="474" y="402" width="76" height="60" rx="12" fill="#eaf3ff"/>
+  <rect x="505" y="424" width="14" height="20" rx="7" fill="#1257d6"/>
+
+  <!-- Wordmark -->
+  <text x="512" y="720" text-anchor="middle"
+        font-family="Cantarell, 'DejaVu Sans', sans-serif" font-weight="700"
+        font-size="104" fill="#eaf3ff" letter-spacing="2">DarkEyesOS</text>
+  <text x="512" y="792" text-anchor="middle"
+        font-family="Cantarell, 'DejaVu Sans', sans-serif" font-weight="500"
+        font-size="46" fill="#7fb4ff" letter-spacing="6">YOUR DATA IS YOURS</text>
+</svg>

@@ -1,0 +1,73 @@
+#!/bin/sh
+# 0350-bibata-cursor — install Bibata Modern Classic (dark/black) and make it the
+# system-default cursor theme. Bibata is not in Debian, so we fetch the official
+# signed release tarball from the upstream GitHub release (pinned version).
+set -eu
+echo "[darkeyes] 0350 Bibata cursor theme"
+
+BIBATA_VERSION="${BIBATA_VERSION:-v2.0.7}"
+# "Classic" is Bibata's black colour variant. "Modern" = rounded edge (the popular
+# dark cursor). Change to Bibata-Original-Classic for the sharp-edge black variant.
+BIBATA_THEME="${BIBATA_THEME:-Bibata-Modern-Classic}"
+BASE="https://github.com/ful1e5/Bibata_Cursor/releases/download/${BIBATA_VERSION}"
+TARBALL="${BIBATA_THEME}.tar.xz"
+DEST=/usr/share/icons
+
+mkdir -p "$DEST"
+ok=0
+for url in "${BASE}/${TARBALL}"; do
+    echo "[darkeyes] fetching $url"
+    if curl -fsSL --retry 3 --max-time 180 "$url" -o "/tmp/${TARBALL}" 2>/dev/null; then
+        if tar -xJf "/tmp/${TARBALL}" -C "$DEST" 2>/dev/null; then
+            ok=1; break
+        fi
+    fi
+done
+rm -f "/tmp/${TARBALL}"
+
+if [ "$ok" != 1 ]; then
+    echo "[darkeyes] WARN: could not fetch Bibata; cursor will fall back to Adwaita" >&2
+    # Still set the preference so it applies once the theme is added to persistence.
+fi
+
+# --- Make it the DEFAULT cursor everywhere --------------------------------------
+# 1) X cursor default (used by the login manager + Xorg apps)
+mkdir -p "$DEST/default"
+cat > "$DEST/default/index.theme" <<EOF
+[Icon Theme]
+Name=Default
+Comment=DarkEyesOS default cursor
+Inherits=${BIBATA_THEME}
+EOF
+
+# 2) System GTK default
+mkdir -p /etc/gtk-3.0 /etc/gtk-4.0
+for ver in gtk-3.0 gtk-4.0; do
+    cat > "/etc/${ver}/settings.ini" <<EOF
+[Settings]
+gtk-cursor-theme-name=${BIBATA_THEME}
+gtk-cursor-theme-size=24
+EOF
+done
+
+# 3) Xresources for pure-X sessions
+mkdir -p /etc/X11/Xresources
+cat > /etc/X11/Xresources/darkeyes-cursor <<EOF
+Xcursor.theme: ${BIBATA_THEME}
+Xcursor.size: 24
+EOF
+
+# 4) environment hint for Wayland/GNOME
+mkdir -p /etc/environment.d
+cat > /etc/environment.d/90-darkeyes-cursor.conf <<EOF
+XCURSOR_THEME=${BIBATA_THEME}
+XCURSOR_SIZE=24
+EOF
+
+# 5) update-alternatives for x-cursor-theme if the theme provides a pointer
+if [ -f "$DEST/${BIBATA_THEME}/cursors/left_ptr" ]; then
+    update-alternatives --install /usr/share/icons/default/index.theme \
+        x-cursor-theme "$DEST/${BIBATA_THEME}/cursor.theme" 90 2>/dev/null || true
+fi
+
+echo "[darkeyes] 0350 cursor set to ${BIBATA_THEME}"

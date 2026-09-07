@@ -1,0 +1,33 @@
+#!/bin/sh
+# darkeyes-metadata-cleaner — strip identifying metadata from files with mat2.
+# Lightweight GUI: pick files with zenity, clean in place (mat2 writes *.cleaned).
+set -eu
+
+command -v mat2 >/dev/null 2>&1 || { echo "mat2 not installed" >&2; exit 1; }
+
+if [ "$#" -gt 0 ]; then
+    files="$*"
+elif command -v zenity >/dev/null 2>&1; then
+    files="$(zenity --file-selection --multiple --separator='
+' \
+        --title='Select files to clean metadata from')" || exit 0
+else
+    echo "usage: darkeyes-metadata-cleaner <file>..." >&2; exit 1
+fi
+
+cleaned=0
+IFS='
+'
+for f in $files; do
+    [ -f "$f" ] || continue
+    if mat2 --inplace "$f" >/dev/null 2>&1 || mat2 "$f" >/dev/null 2>&1; then
+        cleaned=$((cleaned + 1))
+    fi
+done
+
+msg="Cleaned metadata from ${cleaned} file(s)."
+if command -v zenity >/dev/null 2>&1; then
+    zenity --info --title="Metadata Cleaner" --text="$msg" --width=320
+else
+    echo "$msg"
+fi

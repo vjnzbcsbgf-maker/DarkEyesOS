@@ -8,6 +8,14 @@ echo "[darkeyes] 0800 users + branding"
 #     (Tails model). Root account stays locked. -----------------------------------
 passwd -l root 2>/dev/null || true
 
+# --- Dedicated 'clearnet' user for the Unsafe Browser (captive portals). Its
+#     traffic bypasses Tor ONLY when the Unsafe Browser is explicitly launched
+#     (firewall flag). No login, no shell. -----------------------------------------
+if ! id -u clearnet >/dev/null 2>&1; then
+    useradd --system --home-dir /nonexistent --no-create-home \
+        --shell /usr/sbin/nologin clearnet 2>/dev/null || true
+fi
+
 # live-config username/hostname
 mkdir -p /etc/live/config.conf.d
 cat > /etc/live/config.conf.d/darkeyes.conf <<'EOF'

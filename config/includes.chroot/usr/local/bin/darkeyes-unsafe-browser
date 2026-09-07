@@ -1,0 +1,45 @@
+#!/bin/sh
+# darkeyes-unsafe-browser — a NON-Tor browser for captive portals (Wi-Fi login
+# pages), modeled on Tails' Unsafe Browser. It runs as a dedicated "clearnet"
+# user whose traffic the firewall allows to bypass Tor. It is OFF by default and
+# warns loudly, because anything it loads is NOT anonymous.
+set -eu
+
+FLAG=/run/darkeyes/unsafe-browser.enabled
+
+warn() {
+    if command -v zenity >/dev/null 2>&1; then
+        zenity --question --title="Unsafe Browser" --width=460 \
+          --text="<b>This browser does NOT use Tor.</b>\n\nUse it ONLY to log in to a Wi-Fi captive portal. Do not browse, log in to accounts, or open anything sensitive — this traffic is <b>not anonymous</b>.\n\nStart the Unsafe Browser?" \
+          --ok-label="Start (I understand)" --cancel-label="Cancel"
+        return $?
+    fi
+    printf 'WARNING: this browser does NOT use Tor. Continue? [y/N] '
+    read -r a; [ "$a" = y ] || [ "$a" = Y ]
+}
+
+warn || { echo "Cancelled."; exit 0; }
+
+# Open a temporary, firewall-level clearnet exception for the clearnet uid.
+mkdir -p /run/darkeyes
+pkexec sh -c '
+    id -u clearnet >/dev/null 2>&1 || { echo "clearnet user missing"; exit 1; }
+    touch /run/darkeyes/unsafe-browser.enabled
+    /usr/local/bin/darkeyes-firewall-apply
+    nft -f /run/darkeyes/nftables.active
+' || { echo "Could not open captive-portal exception." >&2; exit 1; }
+
+# Launch a minimal browser as the clearnet user, in a fresh amnesic profile.
+cleanup() {
+    pkexec sh -c 'rm -f /run/darkeyes/unsafe-browser.enabled;
+                  /usr/local/bin/darkeyes-firewall-apply;
+                  nft -f /run/darkeyes/nftables.active' 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
+
+# epiphany (GNOME Web) is lightweight; run it as clearnet with a throwaway profile.
+sudo -u clearnet env HOME=/tmp/unsafe-$$ \
+    epiphany --private-instance --profile=/tmp/unsafe-$$ "about:blank" 2>/dev/null \
+    || echo "epiphany not available; install it to use the Unsafe Browser." >&2
+
+rm -rf "/tmp/unsafe-$$" 2>/dev/null || true

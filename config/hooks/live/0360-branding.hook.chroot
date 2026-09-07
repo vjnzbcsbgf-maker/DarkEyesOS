@@ -1,0 +1,92 @@
+#!/bin/sh
+# 0360-branding — "Your Data Is Yours" identity: wallpaper, lock, GDM, logo,
+# Plymouth boot splash. Rasterizes the shipped SVGs with rsvg-convert.
+set -eu
+echo "[darkeyes] 0360 branding (Your Data Is Yours)"
+
+BRAND=/usr/share/darkeyes/branding
+BG=/usr/share/backgrounds/darkeyes
+PLY=/usr/share/plymouth/themes/darkeyes
+
+rasterize() {  # src.svg dst.png W H
+    if command -v rsvg-convert >/dev/null 2>&1; then
+        rsvg-convert -w "$3" -h "$4" "$1" -o "$2" 2>/dev/null || true
+    fi
+}
+
+# --- Rasterize wallpaper + logo -------------------------------------------------
+rasterize "$BG/darkeyes-wallpaper.svg" "$BG/darkeyes-wallpaper.png" 3840 2160
+rasterize "$BRAND/emblem.svg"          "$BRAND/emblem-256.png"       256  256
+rasterize "$BRAND/emblem.svg"          "$PLY/logo.png"               400  400
+
+# --- GNOME background + lock screen (dconf keyfile) -----------------------------
+mkdir -p /etc/dconf/db/local.d
+cat > /etc/dconf/db/local.d/10-darkeyes-background <<EOF
+[org/gnome/desktop/background]
+picture-uri='file://$BG/darkeyes-wallpaper.svg'
+picture-uri-dark='file://$BG/darkeyes-wallpaper.svg'
+picture-options='zoom'
+primary-color='#04060a'
+secondary-color='#04060a'
+
+[org/gnome/desktop/screensaver]
+picture-uri='file://$BG/darkeyes-wallpaper.svg'
+picture-options='zoom'
+primary-color='#04060a'
+EOF
+command -v dconf >/dev/null 2>&1 && dconf update 2>/dev/null || true
+
+# --- GDM greeter background/logo (GNOME 3.x/40+ via gresource is complex; use the
+#     supported greeter dconf + a login banner) ----------------------------------
+mkdir -p /etc/dconf/db/gdm.d /etc/dconf/profile
+cat > /etc/dconf/profile/gdm <<'EOF'
+user-db:user
+system-db:gdm
+EOF
+cat > /etc/dconf/db/gdm.d/10-darkeyes <<EOF
+[org/gnome/login-screen]
+logo='$BRAND/emblem-256.png'
+banner-message-enable=true
+banner-message-text='DarkEyesOS — Your Data Is Yours'
+disable-user-list=true
+EOF
+
+# --- Plymouth boot splash (simple two-step "script" theme showing the logo) -----
+mkdir -p "$PLY"
+cat > "$PLY/darkeyes.plymouth" <<EOF
+[Plymouth Theme]
+Name=DarkEyesOS
+Description=Your Data Is Yours
+ModuleName=script
+
+[script]
+ImageDir=$PLY
+ScriptFile=$PLY/darkeyes.script
+EOF
+
+cat > "$PLY/darkeyes.script" <<'EOF'
+# DarkEyesOS Plymouth splash: centered logo on near-black with a message.
+Window.SetBackgroundTopColor(0.016, 0.024, 0.039);
+Window.SetBackgroundBottomColor(0.016, 0.024, 0.039);
+
+logo.image = Image("logo.png");
+logo.sprite = Sprite(logo.image);
+logo.sprite.SetX(Window.GetWidth()  / 2 - logo.image.GetWidth()  / 2);
+logo.sprite.SetY(Window.GetHeight() / 2 - logo.image.GetHeight() / 2 - 40);
+
+msg.image = Image.Text("Your Data Is Yours", 0.55, 0.71, 1.0, 1, "Cantarell 16");
+msg.sprite = Sprite(msg.image);
+msg.sprite.SetX(Window.GetWidth() / 2 - msg.image.GetWidth() / 2);
+msg.sprite.SetY(Window.GetHeight() / 2 + logo.image.GetHeight() / 2 + 10);
+
+fun refresh_callback() { }
+Plymouth.SetRefreshFunction(refresh_callback);
+EOF
+
+# Register + select the plymouth theme (best-effort; plymouth may be added later).
+if command -v plymouth-set-default-theme >/dev/null 2>&1; then
+    plymouth-set-default-theme darkeyes 2>/dev/null || true
+    update-initramfs -u 2>/dev/null || true
+fi
+
+echo "[darkeyes] 0360 done"

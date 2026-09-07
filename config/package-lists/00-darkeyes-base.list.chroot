@@ -28,6 +28,11 @@ exfatprogs
 util-linux
 parted
 
+# Boot splash (Your Data Is Yours)
+plymouth
+plymouth-label
+plymouth-themes
+
 # RAM management (volatile swap only)
 zram-tools
 
@@ -52,6 +57,8 @@ ca-certificates
 gnupg
 curl
 wget
+xz-utils
+librsvg2-bin
 less
 nano
 htop

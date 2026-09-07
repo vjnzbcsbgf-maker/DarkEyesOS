@@ -13,6 +13,7 @@ usage() {
 darkeyes-tor — control the Tor service
   status     show whether Tor is running + bootstrap phase
   newnym     request a fresh Tor circuit (new identity)
+  circuits   list current Tor circuits (like Onion Circuits)
   check      verify traffic actually exits via Tor
 EOF
 }
@@ -45,6 +46,14 @@ case "${1:-status}" in
         echo "Requesting new Tor circuit..."
         _ctrl "SIGNAL NEWNYM" | grep -q "250" && echo "New identity requested." \
             || { echo "Failed to signal NEWNYM" >&2; exit 1; }
+        ;;
+    circuits)
+        # Show built circuits with their relay path (Onion-Circuits style).
+        _ctrl "GETINFO circuit-status" 2>/dev/null \
+            | sed -n 's/^250[-+]circuit-status=//p; /BUILT/p' \
+            | grep -E 'BUILT' \
+            | awk '{printf "Circuit %s: %s\n", $1, $3}' \
+            || echo "No circuits (is Tor bootstrapped?)"
         ;;
     check)
         echo "Checking Tor connectivity (via check.torproject.org)..."

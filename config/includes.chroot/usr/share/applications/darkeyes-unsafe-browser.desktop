@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Unsafe Browser (captive portal)
+Comment=NON-Tor browser — use ONLY to sign in to Wi-Fi captive portals
+Exec=darkeyes-unsafe-browser
+Icon=web-browser
+Terminal=false
+Categories=Network;WebBrowser;
+Keywords=captive;portal;wifi;clearnet;unsafe;

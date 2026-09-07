@@ -22,5 +22,22 @@ EOF
     exit 0
 fi
 
-# Replace the placeholder "define tor_uid = 0" with the real uid.
-sed "s/^define tor_uid = .*/define tor_uid = ${TOR_UID}/" "$SRC" > "$DST"
+# Unsafe Browser (captive portal): allow the clearnet uid to bypass Tor ONLY
+# while the enable flag exists. Off by default -> fully fail-closed Tor-only.
+CLEARNET_NAT=""
+CLEARNET_FILTER=""
+if [ -f /run/darkeyes/unsafe-browser.enabled ]; then
+    CN_UID="$(id -u clearnet 2>/dev/null || echo '')"
+    if [ -n "$CN_UID" ]; then
+        CLEARNET_NAT="meta skuid ${CN_UID} return"
+        CLEARNET_FILTER="meta skuid ${CN_UID} accept"
+        echo "darkeyes-firewall: clearnet (Unsafe Browser) exception ACTIVE for uid ${CN_UID}" >&2
+    fi
+fi
+
+# Replace the placeholder tor_uid and the clearnet markers.
+sed \
+    -e "s/^define tor_uid = .*/define tor_uid = ${TOR_UID}/" \
+    -e "s|# @CLEARNET_NAT@.*|${CLEARNET_NAT}|" \
+    -e "s|# @CLEARNET_FILTER@.*|${CLEARNET_FILTER}|" \
+    "$SRC" > "$DST"

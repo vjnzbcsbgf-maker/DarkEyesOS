@@ -25,12 +25,22 @@ install_deps() {
     log "Installing build dependencies…"
     export DEBIAN_FRONTEND=noninteractive
     apt-get update
+    # Everything EXCEPT live-build. We install live-build separately so a
+    # pre-installed modern Debian live-build (e.g. put in place by CI) is NOT
+    # clobbered by a distro's possibly-EOL packaged version.
     apt-get install -y --no-install-recommends \
-        live-build debootstrap squashfs-tools xorriso \
+        debootstrap squashfs-tools xorriso \
         mtools dosfstools syslinux-common syslinux-utils isolinux \
         grub-pc-bin grub-efi-amd64-bin \
         ca-certificates gnupg curl rsync \
         || die "dependency install failed"
+
+    if command -v lb >/dev/null 2>&1; then
+        log "live-build already present ($(dpkg-query -W -f='${Version}' live-build 2>/dev/null)); keeping it"
+    else
+        apt-get install -y --no-install-recommends live-build \
+            || die "live-build install failed"
+    fi
 }
 
 # ---- 2. Sanity: environment can actually build a live system -------------------

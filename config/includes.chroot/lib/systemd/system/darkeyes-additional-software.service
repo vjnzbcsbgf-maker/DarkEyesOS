@@ -1,0 +1,14 @@
+[Unit]
+Description=DarkEyesOS: reinstall Additional Software into RAM at boot
+After=network-online.target tor.service
+Wants=network-online.target
+# Only meaningful once persistence is unlocked (the list lives on the volume).
+ConditionPathExists=/etc/darkeyes/additional-packages
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/darkeyes-additional-software apply
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

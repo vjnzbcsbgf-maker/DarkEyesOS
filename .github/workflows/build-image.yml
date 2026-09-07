@@ -1,0 +1,104 @@
+name: Build DarkEyesOS image
+
+# Builds the real, bootable DarkEyesOS image on a privileged GitHub runner and
+# publishes darkeyes-amd64.img (+ .iso + checksums) to the release assets.
+#
+# Triggers:
+#   - push a tag like v1.0    -> builds and publishes a Release with the image
+#   - manual "Run workflow"   -> builds and uploads the image as a run artifact
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: 'Debian suite'
+        default: 'trixie'
+      make_release:
+        description: 'Also create a GitHub Release with the image'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write   # needed to create the Release and upload assets
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Free up disk space on the runner
+        run: |
+          # A GNOME live build needs >14 GB; reclaim the runner's bloat first.
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /opt/hostedtoolcache/CodeQL /usr/local/share/boost || true
+          sudo docker image prune --all --force || true
+          df -h /
+
+      - name: Install Debian's live-build (the modern branch)
+        run: |
+          set -eux
+          sudo apt-get update
+          # Ubuntu ships an EOL live-build fork; install Debian trixie's instead.
+          LB_DEB="live-build_20250505+deb13u1_all.deb"
+          curl -fsSLO "https://deb.debian.org/debian/pool/main/l/live-build/${LB_DEB}"
+          sudo apt-get install -y --no-install-recommends \
+            debootstrap squashfs-tools xorriso mtools dosfstools \
+            syslinux-common syslinux-utils isolinux \
+            grub-pc-bin grub-efi-amd64-bin ca-certificates rsync
+          sudo dpkg -i "./${LB_DEB}" || sudo apt-get -f install -y
+          lb --version || dpkg-query -W -f='${Version}\n' live-build
+
+      - name: Build the image
+        env:
+          DARKEYES_SUITE: ${{ github.event.inputs.suite || 'trixie' }}
+        run: |
+          set -eux
+          sudo -E ./build.sh build
+          ls -lh out/
+
+      - name: Produce a .img alias (isohybrid dd's to USB identically)
+        run: |
+          set -eux
+          cd out
+          cp -f darkeyes-amd64.hybrid.iso darkeyes-amd64.img
+          sha256sum darkeyes-amd64.img darkeyes-amd64.hybrid.iso > SHA256SUMS
+          sha512sum darkeyes-amd64.img darkeyes-amd64.hybrid.iso > SHA512SUMS
+          ls -lh
+
+      - name: Upload build as a workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: darkeyes-image
+          path: |
+            out/darkeyes-amd64.img
+            out/darkeyes-amd64.hybrid.iso
+            out/SHA256SUMS
+            out/SHA512SUMS
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish to a GitHub Release (on tag, or when requested)
+        if: ${{ startsWith(github.ref, 'refs/tags/v') || github.event.inputs.make_release == 'true' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('build-{0}', github.run_number) }}
+          name: DarkEyesOS ${{ github.ref_type == 'tag' && github.ref_name || format('build-{0}', github.run_number) }}
+          body: |
+            **DarkEyesOS** — amnesic, RAM-loaded, Tor-forced live system. *Your Data Is Yours.*
+
+            Flash `darkeyes-amd64.img` to a USB stick (>= 4 GB), e.g.:
+            ```
+            sudo dd if=darkeyes-amd64.img of=/dev/sdX bs=4M conv=fsync status=progress
+            ```
+            Verify first: `sha256sum -c SHA256SUMS`.
+          files: |
+            out/darkeyes-amd64.img
+            out/darkeyes-amd64.hybrid.iso
+            out/SHA256SUMS
+            out/SHA512SUMS
+          fail_on_unmatched_files: true

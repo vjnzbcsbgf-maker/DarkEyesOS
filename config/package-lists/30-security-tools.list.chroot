@@ -18,6 +18,10 @@ mat2
 libimage-exiftool-perl
 secure-delete
 wipe
+zenity
+
+# Unsafe Browser (captive portals) — a lightweight non-Tor browser, run isolated
+epiphany-browser
 
 # Password / entropy
 pwgen

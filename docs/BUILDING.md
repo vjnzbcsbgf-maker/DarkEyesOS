@@ -20,7 +20,25 @@ install them by hand.
 > bootstrap or squashfs stage with permission errors, run the build on a real
 > Debian host, a VM, or a privileged container.
 
-## One-shot build
+## Getting the image without a Debian box: GitHub Actions
+
+The repo ships a workflow, `.github/workflows/build-image.yml`, that builds the
+real image on GitHub's privileged Debian runners and publishes it — no local
+Linux host needed.
+
+- **Tag a release:** `git tag v1.0 && git push origin v1.0` → the workflow builds
+  and creates a **GitHub Release** with `darkeyes-amd64.img`, the `.iso`, and
+  `SHA256SUMS`/`SHA512SUMS` attached as assets.
+- **Manual run:** Actions tab → *Build DarkEyesOS image* → *Run workflow*
+  (optionally tick *make_release*). The image is always uploaded as a downloadable
+  **workflow artifact** even without a release.
+
+The runner installs Debian's modern `live-build` (the same version validated in
+this repo), frees disk space, runs `./build.sh`, and makes a `.img` copy of the
+isohybrid image (it `dd`s to USB identically). This is the honest way to "put the
+`.img` in the assets": the bytes are produced on a real build machine, not faked.
+
+## One-shot local build
 
 ```bash
 sudo ./build.sh

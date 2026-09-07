@@ -11,10 +11,18 @@ an encrypted persistent volume.
 
 > ### Read this first — honest scope
 >
-> This repository is **the build system that produces DarkEyesOS**, not a
-> pre-built image. Bootable images are 1–2 GB and cannot live in git. You run
-> `./build.sh` on a Debian host (or in a container with root + loop devices) and
-> it produces `darkeyes-amd64.hybrid.iso` / `darkeyes.img`.
+> This repository is **the build system that produces DarkEyesOS**. A bootable
+> image is 1–2 GB and cannot live in git (GitHub rejects files over 100 MB), so
+> the image is produced by a build, not committed. There are two supported ways
+> to get the flashable `darkeyes-amd64.img`:
+>
+> 1. **Automated (recommended): GitHub Actions builds it and attaches it to a
+>    Release.** Push a tag (`git tag v1.0 && git push origin v1.0`) or run the
+>    *Build DarkEyesOS image* workflow manually. A privileged Debian runner runs
+>    `lb build` and uploads `darkeyes-amd64.img` (+ `.iso` + checksums) to the
+>    release assets. See [`.github/workflows/build-image.yml`](.github/workflows/build-image.yml).
+> 2. **Local:** run `sudo ./build.sh` on a Debian host (root + loop devices) to
+>    produce the image under `./out/`.
 >
 > **What DarkEyesOS is:** a real, buildable Debian derivative that replicates and
 > extends the Tails security architecture with aggressive hardening.
@@ -47,10 +55,13 @@ an encrypted persistent volume.
 | Tor by default | `tor` + transparent proxy (nftables); non-Tor traffic is dropped |
 | ~512 MB idle | Minimal GNOME (no tracker/extra services), zram, tuned session |
 | Beautiful GUI control | **DarkEyes Control Center** (GTK) to drive everything |
+| Identity | Bibata Modern Classic (dark) cursor + "Your Data Is Yours" emblem |
 | Encrypted persistence | LUKS2 volume; opt-in per-feature, like Tails Persistent Storage |
 | Hardened browser | Official Tor Browser + enforced hardening profile |
+| Tails-style tools | Unsafe Browser (captive portals), Onion Circuits, Metadata Cleaner, Additional Software |
 | Lightweight tools | Small GTK/CLI utilities instead of heavyweight suites |
 | Kernel hardening | Boot params + `sysctl` + module blacklist + AppArmor + hardened kernel |
+| Boots on slow USB 2.0 | isohybrid image; `toram` reads once at boot (~75 s @ 20 MB/s) then runs from RAM |
 
 ## Quick start
 

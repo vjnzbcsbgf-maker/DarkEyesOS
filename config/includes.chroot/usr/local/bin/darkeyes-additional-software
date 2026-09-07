@@ -1,0 +1,51 @@
+#!/bin/sh
+# darkeyes-additional-software — Tails-style "Additional Software".
+# The system stays in RAM; only a PACKAGE LIST (and the apt cache) is persisted.
+# At each boot, packages named in the list are reinstalled into the RAM system.
+set -eu
+
+LIST=/etc/darkeyes/additional-packages     # persisted via the persistence catalog
+PERSIST_CACHE=/run/darkeyes/persistence/apt-archives
+
+usage() {
+    cat <<EOF
+darkeyes-additional-software — keep chosen apps across reboots (installed into RAM)
+  list                 show the configured package list
+  add <pkg>...         add package(s) to the list
+  remove <pkg>...      remove package(s) from the list
+  apply                install all listed packages now (run at boot)
+EOF
+}
+
+mkdir -p "$(dirname "$LIST")"; touch "$LIST"
+
+case "${1:-list}" in
+    list) grep -vE '^\s*(#|$)' "$LIST" || true ;;
+    add)
+        shift
+        for p in "$@"; do grep -qxF "$p" "$LIST" || echo "$p" >> "$LIST"; done
+        echo "Added: $*  (installed now with: darkeyes-additional-software apply)"
+        ;;
+    remove)
+        shift
+        for p in "$@"; do grep -vxF "$p" "$LIST" > "$LIST.tmp" || true; mv "$LIST.tmp" "$LIST"; done
+        echo "Removed: $*"
+        ;;
+    apply)
+        [ "$(id -u)" = 0 ] || { echo "run as root (sudo)"; exit 1; }
+        pkgs="$(grep -vE '^\s*(#|$)' "$LIST" | tr '\n' ' ')"
+        [ -n "$pkgs" ] || { echo "No additional software configured."; exit 0; }
+        export DEBIAN_FRONTEND=noninteractive
+        # Prefer the persisted apt cache so a captive/slow link isn't required.
+        [ -d "$PERSIST_CACHE" ] && cp -n "$PERSIST_CACHE"/*.deb /var/cache/apt/archives/ 2>/dev/null || true
+        echo "Installing additional software into RAM: $pkgs"
+        apt-get update 2>/dev/null || true
+        # shellcheck disable=SC2086
+        apt-get install -y --no-install-recommends $pkgs || \
+            echo "Some packages failed (offline?); they will retry next boot." >&2
+        # Save fetched debs back to persistence for offline reuse.
+        [ -d "$PERSIST_CACHE" ] && cp -n /var/cache/apt/archives/*.deb "$PERSIST_CACHE"/ 2>/dev/null || true
+        ;;
+    -h|--help|help) usage ;;
+    *) usage; exit 1 ;;
+esac

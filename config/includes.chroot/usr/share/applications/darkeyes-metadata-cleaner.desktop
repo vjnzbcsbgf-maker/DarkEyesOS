@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Metadata Cleaner
+Comment=Remove identifying metadata from files before sharing (mat2)
+Exec=darkeyes-metadata-cleaner %F
+Icon=edit-clear-all
+Terminal=false
+Categories=Utility;Security;
+MimeType=application/pdf;image/jpeg;image/png;image/tiff;audio/mpeg;video/mp4;
+Keywords=metadata;exif;privacy;scrub;mat2;
