@@ -1,0 +1,26 @@
+# DarkEyesOS — system hardening components.
+
+# Mandatory Access Control
+apparmor
+apparmor-utils
+apparmor-profiles
+apparmor-profiles-extra
+
+# Audit + integrity
+auditd
+
+# Firewall tooling (nftables is base; keep the service present)
+nftables
+
+# Entropy
+haveged
+rng-tools5
+
+# Microcode (patch CPU speculative-exec bugs where possible)
+intel-microcode
+amd64-microcode
+
+# Sandboxing helpers
+bubblewrap
+
+# Remove attack surface: no compilers/servers by default (enforced by hook 0900)

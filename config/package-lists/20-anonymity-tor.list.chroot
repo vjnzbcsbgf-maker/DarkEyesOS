@@ -1,0 +1,23 @@
+# DarkEyesOS — anonymity layer: Tor, transparent proxy, and the official browser.
+
+# Tor daemon (transparent proxy + DNSPort + isolated SocksPorts)
+tor
+tor-geoipdb
+torsocks
+
+# Official Tor Browser via signature-verifying launcher (NOT a custom fork —
+# see docs/THREAT_MODEL.md). torbrowser-launcher fetches + verifies upstream.
+torbrowser-launcher
+
+# Bridges / pluggable transports for censored networks
+obfs4proxy
+
+# Onion services / anonymized tooling
+onionshare
+
+# DNS-over-Tor helper + firewall
+nftables
+
+# Time sync over Tor instead of clearnet NTP (Tails-style secure clock)
+# (implemented via a systemd unit + this helper)
+tlsdate

@@ -1,0 +1,63 @@
+# DarkEyesOS — base live system, boot, and RAM/amnesia machinery.
+# One package per line; comments allowed. Installed into the chroot.
+
+# Live boot + toram + overlay
+live-boot
+live-boot-doc
+live-config
+live-config-systemd
+live-tools
+
+# Init / base
+systemd
+systemd-sysv
+udev
+dbus
+locales
+console-setup
+keyboard-configuration
+
+# Filesystems for USB + persistence (LUKS2 + ext4)
+cryptsetup
+cryptsetup-bin
+cryptsetup-initramfs
+lvm2
+e2fsprogs
+dosfstools
+exfatprogs
+util-linux
+parted
+
+# RAM management (volatile swap only)
+zram-tools
+
+# Anti-forensics / secure wipe
+secure-delete
+
+# Firmware (Wi-Fi etc.) — needed for real hardware
+firmware-linux-free
+firmware-iwlwifi
+firmware-realtek
+firmware-atheros
+firmware-brcm80211
+
+# Core CLI the system + our tools rely on
+bash
+coreutils
+sudo
+nftables
+iproute2
+iputils-ping
+ca-certificates
+gnupg
+curl
+wget
+less
+nano
+htop
+pciutils
+usbutils
+rfkill
+ethtool
+netcat-openbsd
+xxd

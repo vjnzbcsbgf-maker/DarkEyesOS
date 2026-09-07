@@ -1,0 +1,70 @@
+#!/bin/sh
+# auto/config — declares the DarkEyesOS live system for live-build.
+# Run by `lb config`. Values come from environment (build.sh exports them) with
+# sane defaults so `lb config` also works standalone.
+set -e
+
+SUITE="${DARKEYES_SUITE:-trixie}"
+MIRROR="${DARKEYES_MIRROR:-https://deb.debian.org/debian/}"
+ARCH="${DARKEYES_ARCH:-amd64}"
+APT_PROXY="${DARKEYES_APT_PROXY:-}"
+
+# Kernel-hardening boot parameters baked into the bootloader entries.
+# See docs/SECURITY.md for the rationale behind each one.
+DARKEYES_BOOTAPPEND="\
+boot=live components \
+toram \
+noswap \
+union=overlay \
+quiet splash \
+apparmor=1 security=apparmor \
+lockdown=confidentiality \
+slab_nomerge \
+init_on_alloc=1 init_on_free=1 \
+page_alloc.shuffle=1 \
+randomize_kstack_offset=1 \
+pti=on \
+vsyscall=none \
+debugfs=off \
+module.sig_enforce=1 \
+mitigations=auto,nosmt \
+spectre_v2=on spec_store_bypass_disable=on \
+mce=0 \
+loglevel=0 \
+random.trust_cpu=off"
+
+APT_PROXY_OPT=""
+if [ -n "${APT_PROXY}" ]; then
+    APT_PROXY_OPT="--apt-http-proxy ${APT_PROXY}"
+fi
+
+lb config noauto \
+    --mode debian \
+    --distribution "${SUITE}" \
+    --architecture "${ARCH}" \
+    --archive-areas "main contrib non-free non-free-firmware" \
+    --mirror-bootstrap "${MIRROR}" \
+    --mirror-chroot "${MIRROR}" \
+    --mirror-binary "${MIRROR}" \
+    --parent-mirror-bootstrap "${MIRROR}" \
+    --parent-mirror-chroot "${MIRROR}" \
+    --parent-mirror-binary "${MIRROR}" \
+    --linux-packages "linux-image linux-headers" \
+    --linux-flavours "${ARCH}" \
+    --bootappend-live "${DARKEYES_BOOTAPPEND}" \
+    --bootloaders "syslinux grub-efi" \
+    --binary-images iso-hybrid \
+    --iso-application "DarkEyesOS" \
+    --iso-volume "DarkEyesOS" \
+    --iso-publisher "DarkEyesOS project" \
+    --memtest none \
+    --firmware-binary true \
+    --firmware-chroot true \
+    --apt-recommends false \
+    --apt-indices false \
+    --debian-installer none \
+    --checksums sha256 \
+    --clean \
+    --compression xz \
+    ${APT_PROXY_OPT} \
+    "${@}"

@@ -1,0 +1,54 @@
+# DarkEyesOS — minimal GNOME desktop tuned for ~512 MB idle.
+# We install GNOME Shell but NOT the full gnome / gnome-core metapackage, to keep
+# out tracker, online-accounts, games, and other RAM-hungry services.
+
+# Display + session
+gdm3
+gnome-shell
+gnome-session
+gnome-settings-daemon
+gnome-control-center
+gnome-terminal
+mutter
+xserver-xorg
+xserver-xorg-video-all
+xserver-xorg-input-all
+
+# Just-enough GNOME apps (lightweight side of GNOME)
+nautilus
+gnome-text-editor
+gnome-system-monitor
+gnome-disk-utility
+eog
+evince
+gnome-screenshot
+gnome-tweaks
+gnome-keyring
+seahorse
+
+# Theming / fonts (the "beautiful GUI")
+gnome-themes-extra
+adwaita-icon-theme
+papirus-icon-theme
+fonts-cantarell
+fonts-noto-core
+fonts-noto-color-emoji
+fonts-dejavu
+
+# GTK stack for our own tools (DarkEyes Control Center)
+python3
+python3-gi
+gir1.2-gtk-4.0
+gir1.2-adw-1
+libadwaita-1-0
+python3-nftables
+
+# NetworkManager (link layer only; Tor handles routing policy)
+network-manager
+network-manager-gnome
+
+# Deliberately EXCLUDED (documented, removed by hook 0900 if pulled in):
+#   tracker3 tracker-miner-fs-3  -> filesystem indexer, big RAM/CPU
+#   gnome-software (background)  -> we don't do live app installs
+#   geoclue-2.0                  -> location service, privacy risk
+#   gnome-online-accounts        -> cloud accounts, identity leak

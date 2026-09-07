@@ -1,0 +1,28 @@
+#!/bin/sh
+# darkeyes-ramwipe — best-effort wipe of freed RAM at shutdown.
+# Tails uses a kernel-level memory poison; on a stock kernel we fill and release
+# memory so remnants are overwritten. This does NOT defend against a cold-boot
+# freeze attack on still-powered RAM (see docs/THREAT_MODEL.md).
+set -u
+
+# Drop caches first so more RAM is reclaimable.
+sync
+echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
+
+# If secure-delete's sdmem is available, use it (thorough).
+if command -v sdmem >/dev/null 2>&1; then
+    # -f fast, -l less secure single pass is enough given time budget at shutdown.
+    sdmem -f -l -l 2>/dev/null || true
+    exit 0
+fi
+
+# Fallback: allocate and dirty memory to overwrite freed pages, then free it.
+# Grab ~90% of MemFree in 64MB chunks.
+free_kb="$(awk '/MemFree/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)"
+[ "$free_kb" -gt 0 ] 2>/dev/null || exit 0
+: # zero-fill via /dev/zero into a tmpfs file, then remove
+tmp=/run/darkeyes-wipe.$$
+head -c "$((free_kb * 900))" /dev/zero > "$tmp" 2>/dev/null || true
+rm -f "$tmp" 2>/dev/null || true
+sync
+exit 0

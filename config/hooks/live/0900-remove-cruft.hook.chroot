@@ -1,0 +1,39 @@
+#!/bin/sh
+# 0900-remove-cruft — shrink attack surface + RAM footprint; run LAST.
+set -eu
+echo "[darkeyes] 0900 remove attack surface + cruft"
+
+export DEBIAN_FRONTEND=noninteractive
+
+# --- Purge indexers / cloud / location if a dependency pulled them in ------------
+apt-get purge -y --auto-remove \
+    tracker3 tracker-miner-fs-3 \
+    gnome-online-accounts \
+    geoclue-2.0 \
+    2>/dev/null || true
+
+# --- Remove servers / listening daemons we never want on an amnesic client -------
+apt-get purge -y --auto-remove \
+    avahi-daemon \
+    cups cups-daemon \
+    openssh-server \
+    rpcbind \
+    2>/dev/null || true
+
+# --- Disable any remaining network-listening units -------------------------------
+systemctl disable ssh.service 2>/dev/null || true
+systemctl disable avahi-daemon.service 2>/dev/null || true
+
+# --- Trim caches and docs to shrink the squashfs (RAM footprint) -----------------
+apt-get autoremove -y 2>/dev/null || true
+apt-get clean 2>/dev/null || true
+rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*.deb
+rm -rf /usr/share/doc/* /usr/share/man/?? /usr/share/man/??_* 2>/dev/null || true
+find /var/log -type f -exec truncate -s0 {} + 2>/dev/null || true
+
+# --- Blow away machine-id so every boot is fresh (amnesia + anti-tracking) -------
+: > /etc/machine-id
+rm -f /var/lib/dbus/machine-id
+ln -sf /etc/machine-id /var/lib/dbus/machine-id
+
+echo "[darkeyes] 0900 done"

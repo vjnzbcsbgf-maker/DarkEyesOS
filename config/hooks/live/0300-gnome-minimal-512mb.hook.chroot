@@ -1,0 +1,54 @@
+#!/bin/sh
+# 0300-gnome-minimal-512mb — trim GNOME to hit the ~512 MB idle target.
+set -eu
+echo "[darkeyes] 0300 minimal GNOME tuning"
+
+# --- Kill the filesystem indexer (biggest idle RAM/CPU offender) ----------------
+# Mask tracker so it can never start, even if a dependency pulls it in.
+for svc in \
+    tracker-extract-3.service \
+    tracker-miner-fs-3.service \
+    tracker-miner-fs-control-3.service \
+    tracker-writeback-3.service ; do
+    systemctl --global mask "$svc" 2>/dev/null || true
+done
+# Also mask the user-session tracker units.
+mkdir -p /etc/systemd/user
+for svc in tracker-extract-3 tracker-miner-fs-3 tracker-writeback-3; do
+    ln -sf /dev/null "/etc/systemd/user/${svc}.service" 2>/dev/null || true
+done
+
+# --- Disable location, online accounts, crash reporting -------------------------
+systemctl disable geoclue.service 2>/dev/null || true
+systemctl mask geoclue.service 2>/dev/null || true
+systemctl disable whoopsie.service 2>/dev/null || true
+systemctl mask   whoopsie.service 2>/dev/null || true
+systemctl disable apport.service 2>/dev/null || true
+
+# --- GNOME Software should not run in the background on a live amnesic system ----
+rm -f /etc/xdg/autostart/gnome-software-service.desktop 2>/dev/null || true
+rm -f /etc/xdg/autostart/org.gnome.Software.desktop 2>/dev/null || true
+
+# --- Disable animations/telemetry-ish defaults via dconf (compiled by hook) -----
+# The dconf keyfiles live in includes.chroot/etc/dconf; compile them now.
+if command -v dconf >/dev/null 2>&1; then
+    dconf update 2>/dev/null || true
+fi
+
+# --- GDM: no user list, no guest, Wayland on (better isolation) -----------------
+mkdir -p /etc/gdm3
+cat > /etc/gdm3/daemon.conf <<'EOF'
+[daemon]
+WaylandEnable=true
+# Auto-login into the confined live user; disable if you set an admin password.
+AutomaticLoginEnable=true
+AutomaticLogin=amnesia
+
+[security]
+DisallowTCP=true
+
+[greeter]
+IncludeAll=false
+EOF
+
+echo "[darkeyes] 0300 done"

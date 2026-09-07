@@ -1,0 +1,16 @@
+#!/bin/sh
+# 0600-apparmor — enable AppArmor enforcement at boot.
+set -eu
+echo "[darkeyes] 0600 AppArmor enforcement"
+
+systemctl enable apparmor.service 2>/dev/null || true
+
+# Put shipped local profiles into enforce mode where the tools exist.
+if command -v aa-enforce >/dev/null 2>&1; then
+    for p in /etc/apparmor.d/*; do
+        [ -f "$p" ] || continue
+        aa-enforce "$p" 2>/dev/null || true
+    done
+fi
+
+echo "[darkeyes] 0600 done"

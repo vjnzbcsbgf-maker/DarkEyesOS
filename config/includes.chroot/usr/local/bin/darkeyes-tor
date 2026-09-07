@@ -1,0 +1,61 @@
+#!/bin/sh
+# darkeyes-tor — tiny Tor control helper (status / new circuit / check).
+# Talks to Tor's ControlPort via the cookie. No heavy deps (nc + coreutils).
+set -eu
+
+CTRL_HOST=127.0.0.1
+CTRL_PORT=9051
+COOKIE=/run/tor/control.authcookie
+[ -f "$COOKIE" ] || COOKIE=/var/run/tor/control.authcookie
+
+usage() {
+    cat <<EOF
+darkeyes-tor — control the Tor service
+  status     show whether Tor is running + bootstrap phase
+  newnym     request a fresh Tor circuit (new identity)
+  check      verify traffic actually exits via Tor
+EOF
+}
+
+# Send one or more control commands over the ControlPort using cookie auth.
+_ctrl() {
+    cmd="$1"
+    if ! command -v nc >/dev/null 2>&1; then
+        echo "darkeyes-tor: 'nc' not available" >&2; return 1
+    fi
+    cookie_hex="$(od -An -tx1 "$COOKIE" 2>/dev/null | tr -d ' \n')"
+    [ -n "$cookie_hex" ] || { echo "darkeyes-tor: no control cookie (is Tor up?)" >&2; return 1; }
+    printf 'AUTHENTICATE %s\r\n%s\r\nQUIT\r\n' "$cookie_hex" "$cmd" \
+        | nc -w 3 "$CTRL_HOST" "$CTRL_PORT"
+}
+
+case "${1:-status}" in
+    status)
+        if systemctl is-active --quiet tor@default.service 2>/dev/null \
+           || systemctl is-active --quiet tor.service 2>/dev/null; then
+            echo "Tor: running"
+            _ctrl "GETINFO status/bootstrap-phase" 2>/dev/null \
+                | grep -i bootstrap || true
+        else
+            echo "Tor: NOT running"
+            exit 1
+        fi
+        ;;
+    newnym)
+        echo "Requesting new Tor circuit..."
+        _ctrl "SIGNAL NEWNYM" | grep -q "250" && echo "New identity requested." \
+            || { echo "Failed to signal NEWNYM" >&2; exit 1; }
+        ;;
+    check)
+        echo "Checking Tor connectivity (via check.torproject.org)..."
+        if torsocks curl -sS --max-time 30 https://check.torproject.org/api/ip 2>/dev/null \
+            | grep -q '"IsTor":true'; then
+            echo "OK: traffic is exiting through Tor."
+        else
+            echo "WARNING: could not confirm Tor exit (network down or not Tor'd)." >&2
+            exit 1
+        fi
+        ;;
+    -h|--help|help) usage ;;
+    *) usage; exit 1 ;;
+esac

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=DarkEyes Control Center
+Comment=Control Tor, firewall, MAC, persistence and RAM
+Exec=darkeyes-control-center
+Icon=preferences-system
+Terminal=false
+Categories=System;Settings;Security;
+Keywords=tor;anonymity;firewall;persistence;darkeyes;

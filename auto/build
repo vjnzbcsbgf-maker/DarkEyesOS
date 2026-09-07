@@ -1,0 +1,4 @@
+#!/bin/sh
+# auto/build — wrapper so `lb build` logs to a file and stays reproducible.
+set -e
+lb build noauto "${@}" 2>&1 | tee darkeyes-build.log

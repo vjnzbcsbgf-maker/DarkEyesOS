@@ -1,0 +1,24 @@
+#!/bin/sh
+# darkeyes-timesync — set the system clock from an HTTPS Date header over Tor.
+# Avoids clearnet NTP (which leaks + is spoofable). Best-effort.
+set -u
+
+TORSOCKS="torsocks"
+command -v torsocks >/dev/null 2>&1 || TORSOCKS=""
+
+URL="https://www.torproject.org"
+
+# Fetch the remote Date header through Tor.
+remote_date="$($TORSOCKS curl -sSI --max-time 30 "$URL" 2>/dev/null \
+    | grep -i '^date:' | head -n1 | cut -d' ' -f2-)"
+
+if [ -n "${remote_date:-}" ]; then
+    if date -u -s "$remote_date" >/dev/null 2>&1; then
+        echo "darkeyes-timesync: clock set from $URL over Tor"
+        hwclock --systohc 2>/dev/null || true
+        exit 0
+    fi
+fi
+
+echo "darkeyes-timesync: could not set clock over Tor (leaving as-is)" >&2
+exit 0

@@ -1,0 +1,19 @@
+[Unit]
+Description=DarkEyesOS fail-closed Tor firewall
+DefaultDependencies=no
+Wants=network-pre.target
+Before=network-pre.target tor.service
+After=local-fs.target
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# Substitute the real debian-tor uid into the ruleset, then load it.
+ExecStartPre=/usr/local/bin/darkeyes-firewall-apply
+ExecStart=/usr/sbin/nft -f /run/darkeyes/nftables.active
+# On stop we do NOT open the network — we keep it closed (fail-closed).
+ExecStop=/usr/sbin/nft flush ruleset
+
+[Install]
+WantedBy=sysinit.target

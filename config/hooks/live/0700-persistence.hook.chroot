@@ -1,0 +1,26 @@
+#!/bin/sh
+# 0700-persistence — enable Tails-style opt-in encrypted persistence.
+set -eu
+echo "[darkeyes] 0700 persistence support"
+
+# live-boot reads persistence config from a volume labeled DarkEyes-Persistence.
+# We enable persistence support but keep it OFF unless the user creates + unlocks
+# the LUKS volume and chooses it at the boot menu.
+mkdir -p /etc/live
+cat > /etc/live/boot.conf <<'EOF'
+# DarkEyesOS live-boot defaults.
+# Persistence is OPT-IN: only activated when a LUKS volume labeled
+# "DarkEyes-Persistence" is present, unlocked, and the user selects the
+# persistence boot entry. Default boot is fully amnesic.
+LIVE_PERSISTENCE_STORAGE="filesystem"
+LIVE_PERSISTENCE_LABEL="DarkEyes-Persistence"
+EOF
+
+# Ship the persistence feature list (what CAN be persisted) into the system.
+mkdir -p /etc/darkeyes/persistence
+if [ -d /usr/share/darkeyes/persistence.d ]; then
+    cp -a /usr/share/darkeyes/persistence.d/. /etc/darkeyes/persistence/ 2>/dev/null || true
+fi
+
+# The setup tool lives in /usr/local/bin/darkeyes-persistence (shipped separately).
+echo "[darkeyes] 0700 done"

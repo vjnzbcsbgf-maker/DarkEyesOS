@@ -1,0 +1,26 @@
+#!/bin/sh
+# darkeyes-firewall-apply — render the nftables ruleset with the real debian-tor
+# uid substituted in, so the Tor daemon (and only it) can reach the network.
+set -eu
+
+SRC=/etc/nftables.conf
+DST=/run/darkeyes/nftables.active
+
+mkdir -p /run/darkeyes
+
+TOR_UID="$(id -u debian-tor 2>/dev/null || echo 0)"
+if [ "$TOR_UID" = "0" ]; then
+    echo "darkeyes-firewall: debian-tor user not found; refusing to open network" >&2
+    # Load a total-drop ruleset rather than risk a leak.
+    cat > "$DST" <<'EOF'
+flush ruleset
+table inet darkeyes {
+    chain output { type filter hook output priority 0; policy drop; oif "lo" accept; }
+    chain input  { type filter hook input  priority 0; policy drop; iif "lo" accept; }
+}
+EOF
+    exit 0
+fi
+
+# Replace the placeholder "define tor_uid = 0" with the real uid.
+sed "s/^define tor_uid = .*/define tor_uid = ${TOR_UID}/" "$SRC" > "$DST"

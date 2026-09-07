@@ -1,0 +1,14 @@
+[Unit]
+Description=DarkEyesOS: set clock over Tor (no clearnet NTP)
+After=tor.service network-online.target
+Wants=tor.service
+# A correct clock is required for Tor to build circuits, so this runs best-effort
+# after Tor is up and nudges the clock from a trusted HTTPS source over Tor.
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/darkeyes-timesync
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

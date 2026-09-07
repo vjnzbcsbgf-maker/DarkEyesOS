@@ -1,0 +1,44 @@
+# DarkEyesOS — professional, LIGHTWEIGHT security & privacy tools.
+# Chosen to be useful without dragging in heavyweight suites that blow the RAM
+# budget. Heavy frameworks (metasploit, full toolboxes) are intentionally
+# omitted; install them into persistence if you need them.
+# Every entry below is a real package in Debian main/contrib.
+
+# Encryption / integrity / key management
+gnupg
+gpa
+keepassxc
+paperkey
+qrencode
+zbar-tools
+cryptsetup
+
+# Secure file handling / metadata scrubbing
+mat2
+libimage-exiftool-perl
+secure-delete
+wipe
+
+# Password / entropy
+pwgen
+diceware
+
+# Network inspection (read-only, defensive)
+nmap
+tcpdump
+mtr-tiny
+whois
+dnsutils
+
+# Integrity checking / hashing (sha*sum come from coreutils in base)
+hashdeep
+
+# Documents (lightweight, offline)
+libreoffice-writer
+libreoffice-calc
+
+# Notes / text
+gnome-text-editor
+
+# Note: VeraCrypt is not in Debian main; users who need it install it into
+# persistence. LUKS2 (cryptsetup) is the built-in encrypted-container tool.

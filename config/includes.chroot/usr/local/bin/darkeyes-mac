@@ -1,0 +1,49 @@
+#!/bin/sh
+# darkeyes-mac — randomize or restore a NIC's MAC address.
+# NetworkManager already randomizes per-connection; this is for manual control.
+set -eu
+
+usage() {
+    cat <<EOF
+darkeyes-mac — MAC address control
+  list                 show interfaces and current MACs
+  random <iface>       set a random locally-administered MAC
+  restore <iface>      restore the permanent hardware MAC
+EOF
+}
+
+_rand_mac() {
+    # Locally-administered, unicast: first octet fixed 0x02 (LAA bit set, unicast).
+    # Remaining 5 octets from /dev/urandom (POSIX, no bash $RANDOM).
+    rest="$(od -An -tx1 -N5 /dev/urandom | tr -s ' ' | sed 's/^ //; s/ /:/g')"
+    printf '02:%s\n' "$rest"
+}
+
+case "${1:-list}" in
+    list)
+        for i in /sys/class/net/*; do
+            n="$(basename "$i")"
+            [ "$n" = "lo" ] && continue
+            printf '%-12s %s\n' "$n" "$(cat "$i/address" 2>/dev/null)"
+        done
+        ;;
+    random)
+        iface="${2:?usage: darkeyes-mac random <iface>}"
+        mac="$(_rand_mac)"
+        ip link set dev "$iface" down
+        ip link set dev "$iface" address "$mac"
+        ip link set dev "$iface" up
+        echo "$iface -> $mac"
+        ;;
+    restore)
+        iface="${2:?usage: darkeyes-mac restore <iface>}"
+        perm="$(ethtool -P "$iface" 2>/dev/null | awk '{print $3}')"
+        [ -n "${perm:-}" ] || { echo "cannot read permanent MAC for $iface" >&2; exit 1; }
+        ip link set dev "$iface" down
+        ip link set dev "$iface" address "$perm"
+        ip link set dev "$iface" up
+        echo "$iface -> $perm (permanent)"
+        ;;
+    -h|--help|help) usage ;;
+    *) usage; exit 1 ;;
+esac

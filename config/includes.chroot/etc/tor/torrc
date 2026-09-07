@@ -1,0 +1,45 @@
+# DarkEyesOS /etc/tor/torrc
+# Transparent proxy + isolated SOCKS ports + DNS over Tor.
+# The firewall (nftables) redirects all non-Tor traffic to the ports below and
+# DROPS anything that can't be Tor'd. This is fail-closed.
+
+User debian-tor
+DataDirectory /var/lib/tor
+RunAsDaemon 0
+
+## ---- Transparent proxy: the firewall redirects clearnet TCP here ----
+TransPort 127.0.0.1:9040 IsolateClientAddr IsolateClientProtocol IsolateDestAddr IsolateDestPort
+
+## ---- DNS over Tor: the firewall redirects UDP/TCP :53 here ----
+DNSPort 127.0.0.1:5353
+AutomapHostsOnResolve 1
+AutomapHostsSuffixes .onion,.exit
+
+## ---- Stream isolation: separate SOCKS ports per app family ----
+# System/updates
+SocksPort 127.0.0.1:9050 IsolateDestAddr IsolateDestPort
+# Tor Browser uses its own bundled tor by default, but if pointed here it gets
+# a dedicated isolated port:
+SocksPort 127.0.0.1:9150 IsolateSOCKSAuth IsolateDestAddr KeepAliveIsolateSOCKSAuth
+# CLI tools via torsocks
+SocksPort 127.0.0.1:9250 IsolateDestAddr IsolateDestPort
+
+## ---- Control port for the Control Center (new-circuit button, status) ----
+ControlPort 127.0.0.1:9051
+CookieAuthentication 1
+CookieAuthFileGroupReadable 1
+
+## ---- Safety / anonymity ----
+# Never act as a relay or exit.
+SocksPolicy accept 127.0.0.0/8
+SocksPolicy reject *
+ClientOnly 1
+AvoidDiskWrites 1
+# Reduce disk fingerprint; state kept in RAM in the live system.
+GeoIPFile /usr/share/tor/geoip
+GeoIPv6File /usr/share/tor/geoip6
+
+## ---- Bridges (uncomment + fill in for censored networks) ----
+#UseBridges 1
+#ClientTransportPlugin obfs4 exec /usr/bin/obfs4proxy
+#Bridge obfs4 <IP:PORT> <FINGERPRINT> cert=<...> iat-mode=0

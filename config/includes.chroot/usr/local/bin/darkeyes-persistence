@@ -1,0 +1,97 @@
+#!/bin/sh
+# darkeyes-persistence — manage the opt-in LUKS2 encrypted persistence volume.
+# Tails-style: amnesic by default; this creates/unlocks/toggles what survives.
+set -eu
+
+LABEL="DarkEyes-Persistence"
+MAPPER="darkeyes_persistence"
+MOUNT=/run/darkeyes/persistence
+CATALOG=/etc/darkeyes/persistence/darkeyes.conf
+STATE=/run/darkeyes/persistence.enabled   # newline list of enabled features
+
+usage() {
+    cat <<EOF
+darkeyes-persistence — encrypted, opt-in persistent storage
+  status                 show volume + enabled features
+  create <device>        create a new LUKS2 persistence volume (DESTROYS device)
+  unlock                 unlock + mount the volume (asks passphrase)
+  lock                   unmount + close the volume
+  enable  <feature>      turn a persistence feature on
+  disable <feature>      turn a persistence feature off
+  features               list features available to persist
+  wipe                   securely destroy the volume header (irreversible)
+
+Features come from: $CATALOG
+EOF
+}
+
+_need_root() { [ "$(id -u)" = 0 ] || { echo "run as root (sudo)" >&2; exit 1; }; }
+
+_find_dev() { blkid -L "$LABEL" 2>/dev/null || true; }
+
+case "${1:-status}" in
+    status)
+        dev="$(_find_dev)"
+        if [ -n "$dev" ]; then echo "Volume: present ($dev, label $LABEL)";
+        else echo "Volume: none (system is fully amnesic)"; fi
+        if [ -e "/dev/mapper/$MAPPER" ]; then echo "State : UNLOCKED, mounted at $MOUNT";
+        else echo "State : locked"; fi
+        echo "Features available:"
+        [ -f "$CATALOG" ] && grep -oE 'source=[a-zA-Z0-9._-]+' "$CATALOG" \
+            | cut -d= -f2 | sort -u | sed 's/^/  - /' || echo "  (catalog missing)"
+        ;;
+    features)
+        [ -f "$CATALOG" ] && grep -oE 'source=[a-zA-Z0-9._-]+' "$CATALOG" \
+            | cut -d= -f2 | sort -u || echo "(catalog missing)"
+        ;;
+    create)
+        _need_root
+        dev="${2:?usage: darkeyes-persistence create <device>}"
+        echo "This will ERASE $dev and create an encrypted persistence volume."
+        printf "Type YES to continue: "; read -r ans; [ "$ans" = YES ] || exit 1
+        cryptsetup luksFormat --type luks2 --pbkdf argon2id \
+            --cipher aes-xts-plain64 --key-size 512 --hash sha512 "$dev"
+        cryptsetup open "$dev" "$MAPPER"
+        mkfs.ext4 -L "$LABEL" "/dev/mapper/$MAPPER"
+        mkdir -p "$MOUNT"; mount "/dev/mapper/$MAPPER" "$MOUNT"
+        # Seed an empty live-boot persistence.conf (nothing enabled yet).
+        : > "$MOUNT/persistence.conf"
+        echo "Created. Enable features with: darkeyes-persistence enable <feature>"
+        ;;
+    unlock)
+        _need_root
+        dev="$(_find_dev)"; [ -n "$dev" ] || { echo "no $LABEL volume found" >&2; exit 1; }
+        [ -e "/dev/mapper/$MAPPER" ] || cryptsetup open "$dev" "$MAPPER"
+        mkdir -p "$MOUNT"; mountpoint -q "$MOUNT" || mount "/dev/mapper/$MAPPER" "$MOUNT"
+        echo "Unlocked + mounted at $MOUNT"
+        ;;
+    lock)
+        _need_root
+        mountpoint -q "$MOUNT" && umount "$MOUNT" || true
+        [ -e "/dev/mapper/$MAPPER" ] && cryptsetup close "$MAPPER" || true
+        echo "Locked."
+        ;;
+    enable|disable)
+        act="$1"; feat="${2:?usage: darkeyes-persistence $1 <feature>}"
+        mkdir -p "$(dirname "$STATE")"; touch "$STATE"
+        if [ "$act" = enable ]; then
+            grep -qx "$feat" "$STATE" || echo "$feat" >> "$STATE"
+        else
+            grep -vx "$feat" "$STATE" > "$STATE.tmp" 2>/dev/null || true
+            mv "$STATE.tmp" "$STATE"
+        fi
+        echo "$act: $feat  (takes effect after unlock at next boot)"
+        ;;
+    wipe)
+        _need_root
+        dev="$(_find_dev)"; [ -n "$dev" ] || { echo "no volume to wipe" >&2; exit 1; }
+        echo "This DESTROYS all persisted data on $dev."
+        printf "Type WIPE to continue: "; read -r ans; [ "$ans" = WIPE ] || exit 1
+        mountpoint -q "$MOUNT" && umount "$MOUNT" || true
+        cryptsetup close "$MAPPER" 2>/dev/null || true
+        cryptsetup luksErase --batch-mode "$dev" || true
+        echo "Header erased; data is unrecoverable."
+        ;;
+    -h|--help|help) usage ;;
+    *) usage; exit 1 ;;
+esac

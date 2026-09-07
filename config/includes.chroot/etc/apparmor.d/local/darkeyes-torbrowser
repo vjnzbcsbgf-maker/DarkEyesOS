@@ -1,0 +1,15 @@
+# DarkEyesOS local AppArmor tweaks for the Tor Browser wrapper.
+# The torbrowser-launcher package ships a base profile; this local include is the
+# supported override point. Keep it tight: no access outside the TB dir + downloads.
+
+# Deny reads of identifying host files.
+deny /etc/machine-id r,
+deny /var/lib/dbus/machine-id r,
+deny /etc/hostname r,
+deny /sys/class/net/*/address r,
+deny @{HOME}/.ssh/** rwklx,
+deny @{HOME}/.gnupg/** rwklx,
+
+# Allow only its own tree + an explicit Downloads dir.
+owner @{HOME}/.local/share/torbrowser/** rwk,
+owner @{HOME}/Downloads/** rw,

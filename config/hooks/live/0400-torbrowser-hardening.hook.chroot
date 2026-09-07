@@ -1,0 +1,50 @@
+#!/bin/sh
+# 0400-torbrowser-hardening — enforce a hardened profile on the OFFICIAL Tor Browser.
+# We do not fork the browser (see docs/THREAT_MODEL.md); we lock down settings and
+# confine it. torbrowser-launcher downloads + verifies the official build at first run.
+set -eu
+echo "[darkeyes] 0400 Tor Browser hardening policy"
+
+# --- Ship an enforced user.js that torbrowser-launcher merges into new profiles --
+# We install it as the launcher's default overrides and also expose it in skel so
+# advanced users can inspect it.
+mkdir -p /etc/darkeyes/torbrowser
+# (the actual user.js content is delivered via includes.chroot; verify it exists)
+if [ ! -f /etc/darkeyes/torbrowser/user.js ]; then
+    echo "[darkeyes] WARN: hardened user.js missing from includes.chroot" >&2
+fi
+
+# --- Wrapper that always injects our user.js into the TB profile before launch ---
+cat > /usr/local/bin/darkeyes-torbrowser <<'EOF'
+#!/bin/sh
+# Launch official Tor Browser with DarkEyesOS' enforced hardening profile applied.
+set -eu
+TBB_HOME="${HOME}/.local/share/torbrowser/tbb"
+PROFILE_GLOB="${TBB_HOME}/*/Browser/TorBrowser/Data/Browser/profile.default"
+HARDEN=/etc/darkeyes/torbrowser/user.js
+
+# Re-apply hardened prefs into whatever profile exists (idempotent).
+for prof in $PROFILE_GLOB; do
+    if [ -d "$prof" ] && [ -f "$HARDEN" ]; then
+        cp -f "$HARDEN" "$prof/user.js"
+    fi
+done
+
+exec torbrowser-launcher "$@"
+EOF
+chmod 0755 /usr/local/bin/darkeyes-torbrowser
+
+# --- Replace the desktop entry so the menu launches our hardened wrapper ---------
+mkdir -p /usr/share/applications
+cat > /usr/share/applications/torbrowser.desktop <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Tor Browser (DarkEyes hardened)
+Comment=Official Tor Browser with DarkEyesOS enforced hardening
+Exec=darkeyes-torbrowser %u
+Icon=torbrowser
+Terminal=false
+Categories=Network;WebBrowser;Security;
+EOF
+
+echo "[darkeyes] 0400 done"

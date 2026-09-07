@@ -1,0 +1,51 @@
+#!/bin/sh
+# 0800-users-branding — live user, locked root, admin-opt-in, and OS branding.
+set -eu
+echo "[darkeyes] 0800 users + branding"
+
+# --- The live user 'amnesia' (created by live-config) has NO admin rights by
+#     default. An admin password is only set at boot if the user opts in
+#     (Tails model). Root account stays locked. -----------------------------------
+passwd -l root 2>/dev/null || true
+
+# live-config username/hostname
+mkdir -p /etc/live/config.conf.d
+cat > /etc/live/config.conf.d/darkeyes.conf <<'EOF'
+LIVE_USERNAME="amnesia"
+LIVE_USER_FULLNAME="DarkEyes Live User"
+LIVE_HOSTNAME="darkeyes"
+# Do NOT auto-grant sudo; admin access is opt-in at boot.
+LIVE_USER_DEFAULT_GROUPS="audio cdrom dip video plugdev netdev bluetooth"
+EOF
+
+# sudo requires a password and is only usable if an admin password was set.
+mkdir -p /etc/sudoers.d
+cat > /etc/sudoers.d/darkeyes <<'EOF'
+# DarkEyesOS: amnesia may use sudo only after an admin password is set at boot.
+Defaults        env_reset,timestamp_timeout=0
+Defaults        lecture=never
+EOF
+chmod 0440 /etc/sudoers.d/darkeyes
+
+# --- OS branding ----------------------------------------------------------------
+cat > /etc/os-release <<'EOF'
+PRETTY_NAME="DarkEyesOS (amnesic, Tor-forced)"
+NAME="DarkEyesOS"
+VERSION_ID="1.0"
+VERSION="1.0 (Debian-live)"
+ID=darkeyesos
+ID_LIKE=debian
+HOME_URL="https://example.invalid/darkeyesos"
+SUPPORT_URL="https://example.invalid/darkeyesos/docs"
+EOF
+cp -f /etc/os-release /usr/lib/os-release 2>/dev/null || true
+
+echo "DarkEyesOS" > /etc/hostname
+cat > /etc/issue <<'EOF'
+
+  DarkEyesOS — amnesic, RAM-loaded, Tor-forced.
+  Nothing is saved unless you unlock persistence.
+
+EOF
+
+echo "[darkeyes] 0800 done"

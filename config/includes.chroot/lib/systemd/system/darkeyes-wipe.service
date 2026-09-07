@@ -1,0 +1,15 @@
+[Unit]
+Description=DarkEyesOS: wipe freed RAM on shutdown (anti-forensics)
+DefaultDependencies=no
+After=final.target
+Before=poweroff.target reboot.target halt.target
+Requires=final.target
+
+[Service]
+Type=oneshot
+# sdmem-based wipe of freed memory. Runs at the very end of shutdown.
+ExecStart=/usr/local/bin/darkeyes-ramwipe
+TimeoutSec=120
+
+[Install]
+WantedBy=final.target

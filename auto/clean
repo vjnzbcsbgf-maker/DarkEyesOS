@@ -1,0 +1,5 @@
+#!/bin/sh
+# auto/clean — purge generated live-build state and our build log.
+set -e
+lb clean noauto "${@}"
+rm -f darkeyes-build.log

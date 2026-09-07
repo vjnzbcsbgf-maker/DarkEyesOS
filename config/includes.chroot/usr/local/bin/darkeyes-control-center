@@ -1,0 +1,165 @@
+#!/usr/bin/python3
+# DarkEyes Control Center — one lightweight GTK4/libadwaita surface to drive Tor,
+# the firewall, MAC randomization, persistence, and system RAM. Uses the shipped
+# CLI tools under the hood (darkeyes-tor, darkeyes-mac, darkeyes-persistence,
+# darkeyes-status) so the logic lives in one place and the GUI stays thin/low-RAM.
+import gi
+gi.require_version("Gtk", "4.0")
+gi.require_version("Adw", "1")
+from gi.repository import Gtk, Adw, GLib  # noqa: E402
+import subprocess  # noqa: E402
+
+APP_ID = "org.darkeyesos.ControlCenter"
+
+
+def run(cmd):
+    """Run a command, return (rc, stdout+stderr). Never raises."""
+    try:
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=45)
+        return p.returncode, (p.stdout or "") + (p.stderr or "")
+    except Exception as e:  # noqa: BLE001
+        return 1, str(e)
+
+
+def status_kv():
+    rc, out = run(["darkeyes-status", "--kv"])
+    kv = {}
+    for line in out.splitlines():
+        if "=" in line:
+            k, v = line.split("=", 1)
+            kv[k.strip()] = v.strip()
+    return kv
+
+
+class Window(Adw.ApplicationWindow):
+    def __init__(self, app):
+        super().__init__(application=app, title="DarkEyes Control Center")
+        self.set_default_size(560, 640)
+
+        toolview = Adw.ToolbarView()
+        header = Adw.HeaderBar()
+        toolview.add_top_bar(header)
+
+        self.toast = Adw.ToastOverlay()
+        toolview.set_content(self.toast)
+        self.set_content(toolview)
+
+        page = Adw.PreferencesPage()
+        self.toast.set_child(page)
+
+        # ---- Status group -----------------------------------------------------
+        g_status = Adw.PreferencesGroup(title="Status", description="Live system state")
+        self.row_ram = Adw.ActionRow(title="RAM", subtitle="—")
+        self.row_tor = Adw.ActionRow(title="Tor", subtitle="—")
+        self.row_fw = Adw.ActionRow(title="Firewall", subtitle="—")
+        self.row_toram = Adw.ActionRow(title="Loaded to RAM", subtitle="—")
+        for r in (self.row_ram, self.row_tor, self.row_fw, self.row_toram):
+            g_status.add(r)
+        refresh = Gtk.Button(label="Refresh")
+        refresh.connect("clicked", lambda *_: self.refresh())
+        refresh.add_css_class("flat")
+        g_status.set_header_suffix(refresh)
+        page.add(g_status)
+
+        # ---- Tor group --------------------------------------------------------
+        g_tor = Adw.PreferencesGroup(title="Tor", description="Anonymity network")
+        r_newnym = Adw.ActionRow(title="New Tor circuit",
+                                 subtitle="Request a fresh identity")
+        b_newnym = Gtk.Button(label="New identity", valign=Gtk.Align.CENTER)
+        b_newnym.add_css_class("suggested-action")
+        b_newnym.connect("clicked", self.on_newnym)
+        r_newnym.add_suffix(b_newnym)
+        g_tor.add(r_newnym)
+
+        r_check = Adw.ActionRow(title="Verify Tor", subtitle="Confirm traffic exits via Tor")
+        b_check = Gtk.Button(label="Check", valign=Gtk.Align.CENTER)
+        b_check.connect("clicked", self.on_check)
+        r_check.add_suffix(b_check)
+        g_tor.add(r_check)
+        page.add(g_tor)
+
+        # ---- Network group ----------------------------------------------------
+        g_net = Adw.PreferencesGroup(title="Network identity")
+        r_mac = Adw.ActionRow(title="Randomize MAC (all interfaces)",
+                              subtitle="Resist link-layer tracking")
+        b_mac = Gtk.Button(label="Randomize", valign=Gtk.Align.CENTER)
+        b_mac.connect("clicked", self.on_mac)
+        r_mac.add_suffix(b_mac)
+        g_net.add(r_mac)
+        page.add(g_net)
+
+        # ---- Persistence group ------------------------------------------------
+        g_p = Adw.PreferencesGroup(
+            title="Persistence",
+            description="Amnesic by default. Enable encrypted storage to keep data.")
+        self.row_persist = Adw.ActionRow(title="Encrypted volume", subtitle="—")
+        b_pstatus = Gtk.Button(label="Details", valign=Gtk.Align.CENTER)
+        b_pstatus.connect("clicked", self.on_persist_details)
+        self.row_persist.add_suffix(b_pstatus)
+        g_p.add(self.row_persist)
+        page.add(g_p)
+
+        self.refresh()
+
+    # ---- actions --------------------------------------------------------------
+    def notify(self, msg):
+        self.toast.add_toast(Adw.Toast(title=msg, timeout=3))
+
+    def refresh(self):
+        kv = status_kv()
+        self.row_ram.set_subtitle(
+            f"{kv.get('RAM_USED_MB', '?')} MB used of {kv.get('RAM_TOTAL_MB', '?')} MB")
+        tor = kv.get("TOR", "?")
+        self.row_tor.set_subtitle("running" if tor == "running" else "stopped")
+        fw = kv.get("FIREWALL", "?")
+        self.row_fw.set_subtitle(
+            "active — non-Tor traffic dropped" if fw == "active" else "INACTIVE")
+        self.row_toram.set_subtitle("yes — USB removable" if kv.get("TORAM") == "yes"
+                                    else "no")
+        p = kv.get("PERSISTENCE", "none")
+        self.row_persist.set_subtitle(
+            {"none": "none — fully amnesic",
+             "locked": "present, locked",
+             "unlocked": "unlocked + mounted"}.get(p, p))
+        return False
+
+    def on_newnym(self, _):
+        rc, out = run(["darkeyes-tor", "newnym"])
+        self.notify("New Tor identity requested" if rc == 0 else "Tor: NEWNYM failed")
+
+    def on_check(self, _):
+        self.notify("Checking Tor… (this takes a few seconds)")
+
+        def worker():
+            rc, out = run(["darkeyes-tor", "check"])
+            GLib.idle_add(self.notify,
+                          "Confirmed: exiting via Tor" if rc == 0
+                          else "Could NOT confirm Tor exit")
+            return False
+        GLib.Thread.new("tor-check", worker)
+
+    def on_mac(self, _):
+        rc, out = run(["pkexec", "sh", "-c",
+                       "for i in $(ls /sys/class/net | grep -v lo); do "
+                       "darkeyes-mac random \"$i\"; done"])
+        self.notify("MAC addresses randomized" if rc == 0 else "MAC change failed")
+
+    def on_persist_details(self, _):
+        rc, out = run(["darkeyes-persistence", "status"])
+        dlg = Adw.MessageDialog(transient_for=self, heading="Persistence",
+                                body=out.strip() or "unavailable")
+        dlg.add_response("ok", "Close")
+        dlg.present()
+
+
+class App(Adw.Application):
+    def __init__(self):
+        super().__init__(application_id=APP_ID)
+
+    def do_activate(self):
+        win = self.props.active_window or Window(self)
+        win.present()
+
+
+if __name__ == "__main__":
+    App().run(None)

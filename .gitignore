@@ -1,0 +1,33 @@
+# Build artifacts — never commit multi-GB images or the live-build workdir
+/out/
+/cache/
+/.build/
+config/binary
+config/bootstrap
+config/chroot
+config/common
+config/source
+chroot/
+chroot.packages.*
+binary/
+binary.*
+*.iso
+*.img
+*.img.*
+*.hybrid.iso
+*.squashfs
+*.tar.zst
+*.tar.gz
+SHA256SUMS
+SHA512SUMS
+*.log
+.lb-*
+
+# Editor / OS cruft
+*.swp
+*~
+.DS_Store
+
+# Compiled tool artifacts
+__pycache__/
+*.pyc

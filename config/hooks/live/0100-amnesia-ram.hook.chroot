@@ -1,0 +1,47 @@
+#!/bin/sh
+# 0100-amnesia-ram — make the system amnesic and RAM-friendly.
+# Runs inside the chroot during `lb build`. Fail loud so a broken hook fails the build.
+set -eu
+echo "[darkeyes] 0100 amnesia + RAM configuration"
+
+# --- Never use on-disk swap; only volatile zram ---------------------------------
+# zram-tools config: a compressed RAM swap that is wiped on power-off.
+mkdir -p /etc/default
+cat > /etc/default/zramswap <<'EOF'
+# DarkEyesOS: volatile compressed RAM swap (never touches disk).
+ALGO=zstd
+# Use up to 50% of RAM as zram swap; adjust for low-RAM machines.
+PERCENT=50
+PRIORITY=100
+EOF
+
+# --- journald: keep logs in RAM only (unless persistence enables otherwise) -----
+mkdir -p /etc/systemd/journald.conf.d
+cat > /etc/systemd/journald.conf.d/00-darkeyes-volatile.conf <<'EOF'
+[Journal]
+Storage=volatile
+RuntimeMaxUse=32M
+ForwardToSyslog=no
+EOF
+
+# --- No swap partitions in fstab, ever ------------------------------------------
+# live-config generates fstab at boot; drop a marker so our boot hook strips swap.
+mkdir -p /etc/darkeyes
+echo "noswap=1" > /etc/darkeyes/amnesia.conf
+
+# --- tmp on tmpfs (RAM) ---------------------------------------------------------
+ln -sf /usr/share/systemd/tmp.mount /etc/systemd/system/tmp.mount 2>/dev/null || true
+systemctl enable tmp.mount 2>/dev/null || true
+
+# --- Disable core dumps (anti-forensics + anti-info-leak) -----------------------
+mkdir -p /etc/security/limits.d
+cat > /etc/security/limits.d/00-darkeyes-nocore.conf <<'EOF'
+* hard core 0
+* soft core 0
+EOF
+
+# --- Enable the shutdown RAM-wipe unit (shipped via includes.chroot) ------------
+systemctl enable darkeyes-wipe.service 2>/dev/null || true
+systemctl enable zramswap.service 2>/dev/null || true
+
+echo "[darkeyes] 0100 done"

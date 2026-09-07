@@ -1,0 +1,45 @@
+#!/bin/sh
+# darkeyes-status — one-glance system state (used by the Control Center + CLI).
+# Emits machine-parseable KEY=VALUE lines and a human summary.
+set -eu
+
+# RAM
+mem_total="$(awk '/MemTotal/{print $2}' /proc/meminfo)"
+mem_avail="$(awk '/MemAvailable/{print $2}' /proc/meminfo)"
+mem_used_mb="$(( (mem_total - mem_avail) / 1024 ))"
+mem_total_mb="$(( mem_total / 1024 ))"
+
+# Tor
+if systemctl is-active --quiet tor@default.service 2>/dev/null \
+   || systemctl is-active --quiet tor.service 2>/dev/null; then
+    tor=running; else tor=stopped; fi
+
+# Firewall
+if nft list table inet darkeyes >/dev/null 2>&1; then fw=active; else fw=inactive; fi
+
+# Persistence
+if [ -e /dev/mapper/darkeyes_persistence ]; then persist=unlocked
+elif blkid -L DarkEyes-Persistence >/dev/null 2>&1; then persist=locked
+else persist=none; fi
+
+# toram (did we boot into RAM?)
+if grep -qw toram /proc/cmdline 2>/dev/null; then toram=yes; else toram=no; fi
+
+if [ "${1:-}" = "--kv" ]; then
+    echo "RAM_USED_MB=$mem_used_mb"
+    echo "RAM_TOTAL_MB=$mem_total_mb"
+    echo "TOR=$tor"
+    echo "FIREWALL=$fw"
+    echo "PERSISTENCE=$persist"
+    echo "TORAM=$toram"
+    exit 0
+fi
+
+cat <<EOF
+DarkEyesOS status
+  RAM used     : ${mem_used_mb} MB / ${mem_total_mb} MB
+  Tor          : ${tor}
+  Firewall     : ${fw} (fail-closed Tor transproxy)
+  Persistence  : ${persist}
+  Loaded to RAM: ${toram}
+EOF

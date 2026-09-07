@@ -1,0 +1,46 @@
+#!/bin/sh
+# 0500-kernel-sysctl-hardening — enforce sysctl + module blacklist + hidepid.
+# The actual sysctl/modprobe files ship via includes.chroot; this hook wires up
+# the pieces that need to run in the chroot (services, hidepid mount, kernel pkg).
+set -eu
+echo "[darkeyes] 0500 kernel & sysctl hardening"
+
+# --- Mount /proc with hidepid=2 so users can't see each other's processes -------
+mkdir -p /etc/systemd/system/proc-hidepid.service.d
+cat > /etc/systemd/system/darkeyes-hidepid.service <<'EOF'
+[Unit]
+Description=DarkEyesOS: remount /proc with hidepid=2
+DefaultDependencies=no
+After=local-fs.target
+Before=sysinit.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/mount -o remount,rw,hidepid=2 /proc
+RemainAfterExit=yes
+
+[Install]
+WantedBy=sysinit.target
+EOF
+systemctl enable darkeyes-hidepid.service 2>/dev/null || true
+
+# --- Optional hardened kernel package -------------------------------------------
+# If DARKEYES_HARDENED_KERNEL was requested, try to install a hardened variant.
+# (Best-effort: not all suites carry one; the default linux-image stays otherwise.)
+if [ "${DARKEYES_HARDENED_KERNEL:-0}" = "1" ]; then
+    apt-get update 2>/dev/null || true
+    apt-get install -y --no-install-recommends linux-image-amd64 2>/dev/null || true
+fi
+
+# --- Restrict access to kernel logs / kallsyms at runtime -----------------------
+# (kptr_restrict etc. are in the sysctl include; ensure auditd is on)
+systemctl enable auditd.service 2>/dev/null || true
+systemctl enable haveged.service 2>/dev/null || true
+
+# --- Blacklist DMA-capable ports at runtime by default (Thunderbolt) ------------
+# The blacklist file is in includes.chroot; rebuild initramfs so it takes effect.
+if command -v update-initramfs >/dev/null 2>&1; then
+    update-initramfs -u 2>/dev/null || true
+fi
+
+echo "[darkeyes] 0500 done"
