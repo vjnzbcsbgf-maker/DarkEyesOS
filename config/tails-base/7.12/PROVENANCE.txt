@@ -1,0 +1,9 @@
+Tails baseline for DarkEyesOS
+Version : 7.12
+Source  : https://download.tails.net/tails/stable/tails-amd64-7.12/tails-amd64-7.12.iso
+Verified: OpenPGP signature checked against tails.net signing key
+Synced  : 2026-09-07T23:17:19Z
+
+This directory holds Tails' functional CONFIG (firewall, Tor, session hardening,
+package manifest) used as a reference/baseline. It contains NO Tails branding,
+artwork, menus, or trademarks. DarkEyesOS layers its own identity on top.
