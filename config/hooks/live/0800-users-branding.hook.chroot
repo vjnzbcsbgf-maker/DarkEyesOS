@@ -42,10 +42,10 @@ systemctl enable darkeyes-greeter.service 2>/dev/null || true
 
 # --- OS branding ----------------------------------------------------------------
 cat > /etc/os-release <<'EOF'
-PRETTY_NAME="DarkEyesOS (amnesic, Tor-forced)"
+PRETTY_NAME="DarkEyesOS 2.0 (amnesic · Tor + I2P)"
 NAME="DarkEyesOS"
-VERSION_ID="1.0"
-VERSION="1.0 (Debian-live)"
+VERSION_ID="2.0"
+VERSION="2.0 (Debian-live)"
 ID=darkeyesos
 ID_LIKE=debian
 HOME_URL="https://example.invalid/darkeyesos"

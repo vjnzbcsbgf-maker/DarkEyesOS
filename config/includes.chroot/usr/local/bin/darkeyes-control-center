@@ -51,9 +51,10 @@ class Window(Adw.ApplicationWindow):
         g_status = Adw.PreferencesGroup(title="Status", description="Live system state")
         self.row_ram = Adw.ActionRow(title="RAM", subtitle="—")
         self.row_tor = Adw.ActionRow(title="Tor", subtitle="—")
+        self.row_i2p = Adw.ActionRow(title="I2P (i2pd)", subtitle="—")
         self.row_fw = Adw.ActionRow(title="Firewall", subtitle="—")
         self.row_toram = Adw.ActionRow(title="Loaded to RAM", subtitle="—")
-        for r in (self.row_ram, self.row_tor, self.row_fw, self.row_toram):
+        for r in (self.row_ram, self.row_tor, self.row_i2p, self.row_fw, self.row_toram):
             g_status.add(r)
         refresh = Gtk.Button(label="Refresh")
         refresh.connect("clicked", lambda *_: self.refresh())
@@ -111,6 +112,9 @@ class Window(Adw.ApplicationWindow):
             f"{kv.get('RAM_USED_MB', '?')} MB used of {kv.get('RAM_TOTAL_MB', '?')} MB")
         tor = kv.get("TOR", "?")
         self.row_tor.set_subtitle("running" if tor == "running" else "stopped")
+        i2p = kv.get("I2P", "?")
+        self.row_i2p.set_subtitle("running — .i2p via proxy 4444" if i2p == "running"
+                                  else "stopped")
         fw = kv.get("FIREWALL", "?")
         self.row_fw.set_subtitle(
             "active — non-Tor traffic dropped" if fw == "active" else "INACTIVE")

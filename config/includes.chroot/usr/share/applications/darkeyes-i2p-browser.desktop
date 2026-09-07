@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=I2P Browser
+Comment=Browse .i2p eepsites through the I2P network (hardened Firefox)
+Exec=darkeyes-i2p-browser %u
+Icon=firefox-esr
+Terminal=false
+Categories=Network;WebBrowser;Security;
+Keywords=i2p;eepsite;anonymity;darknet;

@@ -1,0 +1,31 @@
+// DarkEyesOS fastfetch configuration — professional branded system info.
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "type": "file",
+    "source": "/usr/share/darkeyes/logo.txt",
+    "padding": { "top": 1, "left": 2, "right": 3 },
+    "color": { "1": "34" }
+  },
+  "display": { "separator": "  ", "color": { "keys": "34" } },
+  "modules": [
+    { "type": "custom", "format": "D A R K E Y E S   O S" },
+    { "type": "custom", "format": "Your Data Is Yours  —  amnesic · Tor + I2P" },
+    "break",
+    { "type": "title", "format": "{user-name}@{host-name}" },
+    { "type": "separator" },
+    { "type": "os", "key": "OS" },
+    { "type": "kernel", "key": "Kernel" },
+    { "type": "uptime", "key": "Uptime" },
+    { "type": "packages", "key": "Packages" },
+    { "type": "shell", "key": "Shell" },
+    { "type": "de", "key": "Desktop" },
+    { "type": "wm", "key": "WM" },
+    { "type": "terminal", "key": "Terminal" },
+    { "type": "memory", "key": "Memory" },
+    "break",
+    { "type": "command", "key": "Networks", "text": "/usr/local/bin/darkeyes-netfetch" },
+    "break",
+    { "type": "colors", "paddingLeft": 2, "symbol": "circle" }
+  ]
+}

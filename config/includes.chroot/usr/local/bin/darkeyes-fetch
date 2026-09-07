@@ -1,0 +1,3 @@
+#!/bin/sh
+# darkeyes-fetch — run fastfetch with the DarkEyesOS logo + config.
+exec fastfetch --config /etc/darkeyes/fastfetch.jsonc "$@"

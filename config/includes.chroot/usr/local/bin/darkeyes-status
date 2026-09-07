@@ -14,6 +14,9 @@ if systemctl is-active --quiet tor@default.service 2>/dev/null \
    || systemctl is-active --quiet tor.service 2>/dev/null; then
     tor=running; else tor=stopped; fi
 
+# I2P
+if systemctl is-active --quiet i2pd.service 2>/dev/null; then i2p=running; else i2p=stopped; fi
+
 # Firewall
 if nft list table inet darkeyes >/dev/null 2>&1; then fw=active; else fw=inactive; fi
 
@@ -29,6 +32,7 @@ if [ "${1:-}" = "--kv" ]; then
     echo "RAM_USED_MB=$mem_used_mb"
     echo "RAM_TOTAL_MB=$mem_total_mb"
     echo "TOR=$tor"
+    echo "I2P=$i2p"
     echo "FIREWALL=$fw"
     echo "PERSISTENCE=$persist"
     echo "TORAM=$toram"
@@ -39,7 +43,8 @@ cat <<EOF
 DarkEyesOS status
   RAM used     : ${mem_used_mb} MB / ${mem_total_mb} MB
   Tor          : ${tor}
-  Firewall     : ${fw} (fail-closed Tor transproxy)
+  I2P (i2pd)   : ${i2p}
+  Firewall     : ${fw} (fail-closed; Tor + I2P allowed out)
   Persistence  : ${persist}
   Loaded to RAM: ${toram}
 EOF

@@ -12,6 +12,13 @@ torbrowser-launcher
 # Bridges / pluggable transports for censored networks
 obfs4proxy
 
+# I2P network (i2pd = lean C++ daemon; lower RAM than the Java i2p). Provides an
+# HTTP proxy (127.0.0.1:4444) and SOCKS proxy (127.0.0.1:4447) for .i2p eepsites.
+i2pd
+
+# I2P Browser = hardened Firefox ESR profile wired to the I2P HTTP proxy.
+firefox-esr
+
 # Onion services / anonymized tooling
 onionshare
 

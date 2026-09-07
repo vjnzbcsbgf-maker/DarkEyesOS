@@ -53,6 +53,10 @@ an encrypted persistent volume.
 | Loads into RAM | `live-boot` with `toram`; the USB can be removed after boot |
 | Amnesic | No swap, RAM wiped on shutdown (`sdmem`), nothing persisted by default |
 | Tor by default | `tor` + transparent proxy (nftables); non-Tor traffic is dropped |
+| Dual network (Tor + I2P) | `i2pd` runs alongside Tor; `.i2p` eepsites via the **I2P Browser**. Firewall stays fail-closed — only the Tor and I2P daemons may egress. *This adds reach/compartmentalization, not "double encryption" — see note below.* |
+| I2P Browser | Hardened Firefox ESR profile wired to the I2P proxy (there is no separate "I2P Browser" product) |
+| Branded system info | `fastfetch` with the DarkEyes eye logo + live Tor/I2P status |
+| File manager | **Dolphin** (KDE) set as default |
 | ~512 MB idle | Minimal GNOME (no tracker/extra services), zram, tuned session |
 | Beautiful GUI control | **DarkEyes Control Center** (GTK) to drive everything |
 | Identity | Bibata Modern Classic (dark) cursor + "Your Data Is Yours" emblem |
@@ -90,6 +94,18 @@ persistence/                Persistence feature definitions (Tails-style)
 scripts/                    flash-usb, run-vm, checksum helpers
 docs/                       Architecture, security, threat model, build guide
 ```
+
+## Honest note on "Tor + I2P for more encryption"
+
+Running Tor and I2P at the same time is real and useful, but **not because it
+stacks encryption on the same connection.** They are two separate anonymity
+networks for different destinations: Tor reaches the clearnet and `.onion`
+services; I2P reaches `.i2p` eepsites. DarkEyesOS runs both, routes each kind of
+address to the right network, and keeps the firewall fail-closed (only the Tor
+and I2P daemons may reach the internet). You *can* tunnel one over the other,
+but that usually **hurts** anonymity and speed, so we don't do it by default.
+The benefit here is **broader reach and compartmentalization**, not naive
+"double encryption." See `docs/THREAT_MODEL.md`.
 
 ## First boot, login, and admin access
 

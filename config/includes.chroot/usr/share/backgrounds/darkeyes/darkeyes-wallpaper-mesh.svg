@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="3840" height="2160" viewBox="0 0 3840 2160">
+  <!-- DarkEyesOS alt wallpaper: dual-network mesh (Tor + I2P) motif. -->
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="45%" r="85%">
+      <stop offset="0%" stop-color="#0c1018"/>
+      <stop offset="100%" stop-color="#04060a"/>
+    </radialGradient>
+    <linearGradient id="tor" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7d3cff"/>
+      <stop offset="100%" stop-color="#3aa0ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="3840" height="2160" fill="url(#bg)"/>
+
+  <!-- faint node mesh -->
+  <g stroke="#22314a" stroke-width="1" opacity="0.5">
+    <path d="M300 1700 L900 1200 L1500 1500 L2100 950 L2700 1300 L3300 800"/>
+    <path d="M500 500 L1100 900 L1700 600 L2300 1050 L2900 700 L3500 1150"/>
+    <path d="M900 1200 L1100 900 M1500 1500 L1700 600 M2100 950 L2300 1050 M2700 1300 L2900 700"/>
+  </g>
+  <g fill="#3aa0ff" opacity="0.55">
+    <circle cx="900" cy="1200" r="7"/><circle cx="1500" cy="1500" r="7"/>
+    <circle cx="2100" cy="950" r="7"/><circle cx="2700" cy="1300" r="7"/>
+    <circle cx="1100" cy="900" r="7"/><circle cx="1700" cy="600" r="7"/>
+    <circle cx="2300" cy="1050" r="7"/><circle cx="2900" cy="700" r="7"/>
+  </g>
+
+  <!-- central lock-eye glyph -->
+  <g transform="translate(1920,880)">
+    <path d="M-330 0 C -170 -210, 170 -210, 330 0 C 170 210, -170 210, -330 0 Z"
+          fill="#0b0e14" stroke="url(#tor)" stroke-width="10"/>
+    <circle r="140" fill="none" stroke="url(#tor)" stroke-width="10"/>
+    <path d="M-42 -28 v-28 a42 42 0 0 1 84 0 v28" fill="none" stroke="#eaf3ff" stroke-width="14" stroke-linecap="round"/>
+    <rect x="-40" y="-28" width="80" height="62" rx="12" fill="#eaf3ff"/>
+  </g>
+
+  <text x="1920" y="1560" text-anchor="middle"
+        font-family="Cantarell, 'DejaVu Sans', sans-serif" font-weight="700"
+        font-size="140" fill="#eaf3ff" letter-spacing="4">DarkEyesOS</text>
+  <text x="1920" y="1672" text-anchor="middle"
+        font-family="Cantarell, 'DejaVu Sans', sans-serif" font-weight="500"
+        font-size="60" fill="#7fb4ff" letter-spacing="10">TOR + I2P · YOUR DATA IS YOURS</text>
+</svg>

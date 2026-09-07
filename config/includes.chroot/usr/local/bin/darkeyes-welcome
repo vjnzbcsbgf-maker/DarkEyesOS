@@ -1,0 +1,15 @@
+#!/bin/sh
+# darkeyes-welcome — friendly first-run greeting (Tails-style). Shows once per
+# session; explains the amnesic/Tor+I2P model and links to the Control Center.
+set -u
+STAMP="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/darkeyes-welcome.shown"
+[ -f "$STAMP" ] && exit 0
+mkdir -p "$(dirname "$STAMP")" 2>/dev/null || true
+: > "$STAMP" 2>/dev/null || true
+
+command -v zenity >/dev/null 2>&1 || exit 0
+
+zenity --info --width=520 --title="Welcome to DarkEyesOS 2.0" \
+  --icon-name=preferences-system \
+  --text="<b>Welcome — Your Data Is Yours.</b>\n\nDarkEyesOS is <b>amnesic</b>: everything runs in RAM and is forgotten at shutdown, unless you unlock encrypted Persistence.\n\n<b>Two anonymity networks run at once:</b>\n•  <b>Tor</b> — the clearnet and .onion services (all app traffic is forced through Tor, fail-closed).\n•  <b>I2P</b> — .i2p eepsites, via the <b>I2P Browser</b> in your dock.\n\nOpen the <b>DarkEyes Control Center</b> to see Tor/I2P status, get a new circuit, randomize your MAC, or set up Persistence.\n\nTip: an admin password (for advanced tasks) is set at boot in the DarkEyes Greeter." \
+  2>/dev/null || true

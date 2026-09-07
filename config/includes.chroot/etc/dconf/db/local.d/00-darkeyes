@@ -42,8 +42,8 @@ enabled=false
 show-in-lock-screen=false
 
 [org/gnome/shell]
-# Keep the shell lean: only our tools + essentials favorited.
-favorite-apps=['torbrowser.desktop', 'darkeyes-control-center.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Terminal.desktop', 'org.keepassxc.KeePassXC.desktop']
+# Keep the shell lean: our tools + the two browsers + Dolphin.
+favorite-apps=['torbrowser.desktop', 'darkeyes-i2p-browser.desktop', 'darkeyes-control-center.desktop', 'org.kde.dolphin.desktop', 'org.gnome.Terminal.desktop', 'org.keepassxc.KeePassXC.desktop']
 
 [org/gnome/mutter]
 # Lower GPU/RAM pressure.

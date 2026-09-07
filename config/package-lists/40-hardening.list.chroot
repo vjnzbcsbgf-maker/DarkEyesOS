@@ -22,5 +22,7 @@ amd64-microcode
 
 # Sandboxing helpers
 bubblewrap
+firejail
+firejail-profiles
 
 # Remove attack surface: no compilers/servers by default (enforced by hook 0900)

@@ -1,0 +1,22 @@
+#!/bin/sh
+# 0500-boot-splash (binary stage) — brand the boot menu safely.
+# Copies the splash rasterized in the chroot into the paths GRUB and isolinux
+# look for. Purely additive: if anything is missing this is a no-op and boot is
+# unaffected (never risks an unbootable image).
+set -eu
+echo "[darkeyes] binary/0500 boot splash"
+
+SPLASH="chroot/usr/share/darkeyes/branding/boot-splash.png"
+[ -f "$SPLASH" ] || { echo "[darkeyes] no boot-splash.png; skipping (safe)"; exit 0; }
+
+# GRUB (UEFI): default grub.cfg loads /boot/grub/splash.png if present.
+if [ -d binary/boot/grub ]; then
+    cp -f "$SPLASH" binary/boot/grub/splash.png 2>/dev/null || true
+fi
+
+# isolinux (BIOS): vesamenu uses splash.png in the isolinux dir if referenced.
+if [ -d binary/isolinux ]; then
+    cp -f "$SPLASH" binary/isolinux/splash.png 2>/dev/null || true
+fi
+
+echo "[darkeyes] binary/0500 done"

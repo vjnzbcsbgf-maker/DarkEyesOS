@@ -1,0 +1,29 @@
+#!/bin/sh
+# darkeyes-i2p-browser — launch Firefox ESR as the I2P Browser: a dedicated,
+# amnesic profile pre-wired to the I2P HTTP proxy (i2pd, 127.0.0.1:4444) and
+# hardened via /etc/darkeyes/i2pbrowser/user.js. Confined with firejail if present.
+set -eu
+
+PROFILE="${HOME}/.darkeyes/i2p-profile"
+HARDEN=/etc/darkeyes/i2pbrowser/user.js
+
+mkdir -p "$PROFILE"
+[ -f "$HARDEN" ] && cp -f "$HARDEN" "$PROFILE/user.js"
+
+# Warn if I2P isn't up yet (it can take a few minutes to build tunnels).
+if ! systemctl is-active --quiet i2pd.service 2>/dev/null; then
+    if command -v zenity >/dev/null 2>&1; then
+        zenity --info --title="I2P Browser" --width=380 \
+          --text="The I2P network (i2pd) is not active yet.\n\nI2P can take a few minutes after boot to build tunnels. Try again shortly, or check the DarkEyes Control Center." 2>/dev/null || true
+    else
+        echo "i2pd is not active yet; I2P tunnels may still be building." >&2
+    fi
+fi
+
+LAUNCH="firefox-esr --no-remote --profile $PROFILE about:blank"
+if command -v firejail >/dev/null 2>&1; then
+    exec firejail --quiet firefox-esr --no-remote --profile "$PROFILE" "about:blank"
+else
+    # shellcheck disable=SC2086
+    exec $LAUNCH
+fi

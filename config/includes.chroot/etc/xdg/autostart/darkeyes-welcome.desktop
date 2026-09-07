@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=DarkEyes Welcome
+Comment=First-run welcome and network status
+Exec=darkeyes-welcome
+Terminal=false
+X-GNOME-Autostart-enabled=true
+NoDisplay=true
+OnlyShowIn=GNOME;

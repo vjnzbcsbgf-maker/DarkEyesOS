@@ -1,0 +1,7 @@
+# DarkEyesOS system-wide default applications.
+[Default Applications]
+inode/directory=org.kde.dolphin.desktop
+application/x-gnome-saved-search=org.kde.dolphin.desktop
+
+[Added Associations]
+inode/directory=org.kde.dolphin.desktop;org.gnome.Nautilus.desktop;

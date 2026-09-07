@@ -14,10 +14,13 @@ rasterize() {  # src.svg dst.png W H
     fi
 }
 
-# --- Rasterize wallpaper + logo -------------------------------------------------
-rasterize "$BG/darkeyes-wallpaper.svg" "$BG/darkeyes-wallpaper.png" 3840 2160
-rasterize "$BRAND/emblem.svg"          "$BRAND/emblem-256.png"       256  256
-rasterize "$BRAND/emblem.svg"          "$PLY/logo.png"               400  400
+# --- Rasterize wallpapers + logo ------------------------------------------------
+rasterize "$BG/darkeyes-wallpaper.svg"      "$BG/darkeyes-wallpaper.png"      3840 2160
+rasterize "$BG/darkeyes-wallpaper-mesh.svg" "$BG/darkeyes-wallpaper-mesh.png" 3840 2160
+rasterize "$BRAND/emblem.svg"               "$BRAND/emblem-256.png"           256  256
+rasterize "$BRAND/emblem.svg"               "$PLY/logo.png"                   400  400
+# Boot-menu splash (GRUB/isolinux). A binary-stage hook copies this into the ISO.
+rasterize "$BG/darkeyes-wallpaper.svg"      "$BRAND/boot-splash.png"          1024 768
 
 # --- GNOME background + lock screen (dconf keyfile) -----------------------------
 mkdir -p /etc/dconf/db/local.d

@@ -69,3 +69,6 @@ ethtool
 netcat-openbsd
 xxd
 whiptail
+
+# Branded system info (fastfetch logo/banner)
+fastfetch

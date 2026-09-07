@@ -1,0 +1,9 @@
+#!/bin/sh
+# darkeyes-netfetch — compact Tor/I2P status line for the fastfetch banner.
+set -u
+tor="off"; i2p="off"
+systemctl is-active --quiet tor.service 2>/dev/null && tor="on"
+systemctl is-active --quiet tor@default.service 2>/dev/null && tor="on"
+systemctl is-active --quiet i2pd.service 2>/dev/null && i2p="on"
+printf 'Tor [%s]   I2P [%s]   Firewall [%s]\n' "$tor" "$i2p" \
+    "$(nft list table inet darkeyes >/dev/null 2>&1 && echo fail-closed || echo off)"

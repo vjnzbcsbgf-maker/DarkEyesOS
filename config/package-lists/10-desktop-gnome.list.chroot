@@ -14,7 +14,13 @@ xserver-xorg
 xserver-xorg-video-all
 xserver-xorg-input-all
 
-# Just-enough GNOME apps (lightweight side of GNOME)
+# Default file manager: Dolphin (KDE). Pulls some KDE/Qt libraries but is the
+# user's chosen manager; set as default for inode/directory below.
+dolphin
+kde-cli-tools
+ark
+
+# Nautilus kept as a fallback GNOME manager
 nautilus
 gnome-text-editor
 gnome-system-monitor

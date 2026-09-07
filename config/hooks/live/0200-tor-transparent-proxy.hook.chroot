@@ -6,9 +6,11 @@ echo "[darkeyes] 0200 Tor transparent proxy + fail-closed firewall"
 # Dedicated system user id for Tor is provided by the debian tor package (debian-tor).
 # We route everything except Tor's own uid through Tor, and DROP the rest.
 
-# --- Enable tor + our firewall at boot ------------------------------------------
+# --- Enable tor + i2pd + our firewall at boot -----------------------------------
 systemctl enable tor.service 2>/dev/null || true
 systemctl enable darkeyes-firewall.service 2>/dev/null || true
+# I2P daemon (dual-network). .i2p eepsites via its HTTP proxy 127.0.0.1:4444.
+systemctl enable i2pd.service 2>/dev/null || true
 
 # --- Disable clearnet DNS resolvers ---------------------------------------------
 # All DNS must go through Tor's DNSPort (see /etc/tor/torrc + firewall redirect).

@@ -48,9 +48,23 @@ if [ -f /run/darkeyes/unsafe-browser.enabled ]; then
     fi
 fi
 
-# Replace the placeholder tor_uid and the clearnet markers.
+# I2P daemon (i2pd): allow its uid to reach the network too, so .i2p works
+# alongside Tor. Still fail-closed — only tor + i2pd users may egress; user apps
+# go through the Tor transproxy or the I2P proxies. If i2pd isn't present, this
+# stays empty and the ruleset is Tor-only.
+I2P_NAT=""
+I2P_FILTER=""
+I2P_UID="$(id -u i2pd 2>/dev/null || echo '')"
+if [ -n "$I2P_UID" ]; then
+    I2P_NAT="meta skuid ${I2P_UID} return"
+    I2P_FILTER="meta skuid ${I2P_UID} accept"
+fi
+
+# Replace the placeholder tor_uid and the clearnet/i2p markers.
 sed \
     -e "s/^define tor_uid = .*/define tor_uid = ${TOR_UID}/" \
     -e "s|# @CLEARNET_NAT@.*|${CLEARNET_NAT}|" \
     -e "s|# @CLEARNET_FILTER@.*|${CLEARNET_FILTER}|" \
+    -e "s|# @I2P_NAT@.*|${I2P_NAT}|" \
+    -e "s|# @I2P_FILTER@.*|${I2P_FILTER}|" \
     "$SRC" > "$DST"
