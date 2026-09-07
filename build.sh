@@ -88,12 +88,20 @@ do_build() {
 
     mkdir -p "${OUT}"
     shopt -s nullglob
-    local produced=()
-    for img in *.iso *.hybrid.iso *.img; do
-        mv -f "${img}" "${OUT}/darkeyes-${DARKEYES_ARCH}.hybrid.iso"
-        produced+=("darkeyes-${DARKEYES_ARCH}.hybrid.iso")
+    # live-build emits exactly one image, named live-image-<arch>.hybrid.iso (or
+    # .img). Collect candidates WITHOUT overlapping globs (".hybrid.iso" also
+    # matches ".iso", which would list the same file twice), then dedupe.
+    local candidates=() seen=" " img
+    for img in live-image-*.hybrid.iso live-image-*.iso live-image-*.img *.hybrid.iso *.iso *.img; do
+        [ -f "${img}" ] || continue
+        case "${seen}" in *" ${img} "*) continue ;; esac
+        seen="${seen}${img} "
+        candidates+=("${img}")
     done
-    [ "${#produced[@]}" -gt 0 ] || die "no image was produced (check darkeyes-build.log)"
+    [ "${#candidates[@]}" -gt 0 ] || die "no image was produced (check darkeyes-build.log)"
+    # Move the first (and normally only) produced image to the canonical name.
+    mv -f "${candidates[0]}" "${OUT}/darkeyes-${DARKEYES_ARCH}.hybrid.iso"
+    log "Collected image: ${candidates[0]} -> darkeyes-${DARKEYES_ARCH}.hybrid.iso"
 
     log "Generating checksums…"
     ( cd "${OUT}" && sha256sum ./*.iso > SHA256SUMS && sha512sum ./*.iso > SHA512SUMS )
