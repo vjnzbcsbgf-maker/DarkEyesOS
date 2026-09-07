@@ -40,18 +40,22 @@ jobs:
           sudo -E ./scripts/sync-tails.sh "${TAILS_VERSION}"
           sudo chown -R "$(id -u):$(id -g)" config/tails-base
 
-      - name: Open a Pull Request with the new baseline
-        uses: peter-evans/create-pull-request@v6
-        with:
-          branch: tails-sync/${{ github.event.inputs.version || '7.12' }}
-          title: "Sync Tails ${{ github.event.inputs.version || '7.12' }} baseline"
-          commit-message: "Sync Tails ${{ github.event.inputs.version || '7.12' }} functional config baseline"
-          body: |
-            Automated Tails baseline sync (signature-verified).
-
-            This PR adds/updates `config/tails-base/<version>/` with Tails'
-            functional configuration (firewall, Tor, session hardening, package
-            manifest) — no Tails branding/artwork. Review the diff and fold any
-            vetted improvements into `config/`, keeping DarkEyesOS' own menus and
-            branding.
-          add-paths: config/tails-base/**
+      - name: Push the baseline to a branch (no PR permission needed)
+        env:
+          VERSION: ${{ github.event.inputs.version || '7.12' }}
+        run: |
+          set -eux
+          if git diff --quiet -- config/tails-base && git ls-files --error-unmatch config/tails-base/"$VERSION" >/dev/null 2>&1; then
+            echo "No changes in the Tails baseline; nothing to push."
+            exit 0
+          fi
+          git config user.name  "DarkEyesOS Tails Sync"
+          git config user.email "noreply@darkeyesos.invalid"
+          BR="tails-sync/${VERSION}"
+          git checkout -B "$BR"
+          git add config/tails-base
+          git commit -m "Sync Tails ${VERSION} functional config baseline (signature-verified)" || {
+            echo "Nothing to commit."; exit 0; }
+          git push -f origin "$BR"
+          echo "Baseline pushed to branch: $BR"
+          echo "Open a PR to review/merge: https://github.com/${GITHUB_REPOSITORY}/compare/main...${BR}?expand=1"
