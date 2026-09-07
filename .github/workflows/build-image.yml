@@ -67,6 +67,10 @@ jobs:
       - name: Produce a .img alias (isohybrid dd's to USB identically)
         run: |
           set -eux
+          # build.sh ran under sudo, so out/ is root-owned. Take ownership so this
+          # step and the upload/release steps (which run as the runner user) can
+          # write and read the files.
+          sudo chown -R "$(id -u):$(id -g)" out
           cd out
           cp -f darkeyes-amd64.hybrid.iso darkeyes-amd64.img
           sha256sum darkeyes-amd64.img darkeyes-amd64.hybrid.iso > SHA256SUMS
