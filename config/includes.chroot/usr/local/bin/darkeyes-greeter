@@ -1,0 +1,63 @@
+#!/bin/sh
+# darkeyes-greeter — Tails-style boot greeter (console).
+# Runs once at boot, BEFORE the graphical login, on tty1. Lets the user
+# optionally set an administration password. If set, the live user 'amnesia'
+# gains sudo; if skipped, the system has NO admin/root path (fully locked down).
+# The desktop auto-enters afterward regardless (amnesic kiosk model).
+set -u
+
+LIVE_USER="amnesia"
+STATE=/run/darkeyes/greeter.done
+mkdir -p /run/darkeyes
+
+# Already ran this boot? (idempotent — never block a restart of the unit.)
+[ -f "$STATE" ] && exit 0
+
+# Fall back gracefully if whiptail is missing or there is no usable terminal.
+if ! command -v whiptail >/dev/null 2>&1 || [ ! -t 0 ]; then
+    echo "darkeyes-greeter: no interactive terminal; leaving admin disabled." >&2
+    : > "$STATE"
+    exit 0
+fi
+
+BACKTITLE="DarkEyesOS — Your Data Is Yours"
+
+# --- Welcome + choice ------------------------------------------------------------
+if whiptail --backtitle "$BACKTITLE" --title "DarkEyes Greeter" \
+      --yesno "Welcome to DarkEyesOS (amnesic, Tor-forced).\n\nDo you want to set an ADMINISTRATION password?\n\n• Yes  — enables admin tasks (sudo) this session only.\n• No   — no admin access; the system stays fully locked down.\n\nEither way, nothing is saved unless you unlock persistence." \
+      --yes-button "Set password" --no-button "Skip (locked)" 20 70; then
+
+    # --- Prompt for the password twice ------------------------------------------
+    while : ; do
+        p1="$(whiptail --backtitle "$BACKTITLE" --title "Admin password" \
+              --passwordbox "Enter an administration password:" 10 60 \
+              3>&1 1>&2 2>&3)" || { p1=""; break; }
+        p2="$(whiptail --backtitle "$BACKTITLE" --title "Admin password" \
+              --passwordbox "Confirm the administration password:" 10 60 \
+              3>&1 1>&2 2>&3)" || { p1=""; break; }
+        if [ -z "$p1" ]; then
+            whiptail --backtitle "$BACKTITLE" --msgbox "Empty password — admin stays disabled." 8 60
+            break
+        fi
+        if [ "$p1" = "$p2" ]; then
+            # Set the password and grant sudo for this (RAM-only) session.
+            if printf '%s:%s\n' "$LIVE_USER" "$p1" | chpasswd 2>/dev/null; then
+                usermod -aG sudo "$LIVE_USER" 2>/dev/null || true
+                whiptail --backtitle "$BACKTITLE" --msgbox \
+                    "Admin password set. '$LIVE_USER' can now use sudo this session." 8 64
+            else
+                whiptail --backtitle "$BACKTITLE" --msgbox \
+                    "Failed to set password; admin stays disabled." 8 60
+            fi
+            break
+        fi
+        whiptail --backtitle "$BACKTITLE" --msgbox "Passwords did not match — try again." 8 60
+    done
+else
+    # Skipped: make sure amnesia is NOT in sudo and has no usable password.
+    deluser "$LIVE_USER" sudo 2>/dev/null || gpasswd -d "$LIVE_USER" sudo 2>/dev/null || true
+    passwd -l "$LIVE_USER" 2>/dev/null || true
+fi
+
+: > "$STATE"
+exit 0

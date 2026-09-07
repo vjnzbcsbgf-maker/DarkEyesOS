@@ -91,6 +91,20 @@ scripts/                    flash-usb, run-vm, checksum helpers
 docs/                       Architecture, security, threat model, build guide
 ```
 
+## First boot, login, and admin access
+
+- The live user is **`amnesia`** and the desktop **auto-logs in** (no desktop
+  password) — consistent with an amnesic, RAM-only system.
+- The **root account is locked** — there is no root password and you cannot log
+  in as root or `su` to it.
+- On boot, the **DarkEyes Greeter** (console, before the desktop) asks whether to
+  set an **administration password**:
+  - Set one → `amnesia` gains `sudo` for that session (needed for persistence
+    setup, firewall reloads, etc.).
+  - Skip it → the system has **no admin/root path at all** (fully locked down),
+    Tails-style.
+- Admin state is per-session and never persisted; every boot starts fresh.
+
 ## License
 
 GPL-3.0-or-later. See [`LICENSE`](LICENSE). DarkEyesOS bundles third-party

@@ -26,7 +26,9 @@ LIVE_HOSTNAME="darkeyes"
 LIVE_USER_DEFAULT_GROUPS="audio cdrom dip video plugdev netdev bluetooth"
 EOF
 
-# sudo requires a password and is only usable if an admin password was set.
+# sudo requires a password and is only usable if the DarkEyes Greeter set an
+# admin password at boot (which also adds amnesia to the sudo group). The
+# %sudo rule is Debian's default; we only tighten defaults here.
 mkdir -p /etc/sudoers.d
 cat > /etc/sudoers.d/darkeyes <<'EOF'
 # DarkEyesOS: amnesia may use sudo only after an admin password is set at boot.
@@ -34,6 +36,9 @@ Defaults        env_reset,timestamp_timeout=0
 Defaults        lecture=never
 EOF
 chmod 0440 /etc/sudoers.d/darkeyes
+
+# Enable the boot greeter (asks whether to set an admin password before login).
+systemctl enable darkeyes-greeter.service 2>/dev/null || true
 
 # --- OS branding ----------------------------------------------------------------
 cat > /etc/os-release <<'EOF'

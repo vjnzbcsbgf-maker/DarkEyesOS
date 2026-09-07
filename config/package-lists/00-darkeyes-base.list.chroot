@@ -68,3 +68,4 @@ rfkill
 ethtool
 netcat-openbsd
 xxd
+whiptail
