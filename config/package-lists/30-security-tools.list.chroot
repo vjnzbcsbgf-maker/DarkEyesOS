@@ -6,7 +6,6 @@
 
 # Encryption / integrity / key management
 gnupg
-gpa
 keepassxc
 paperkey
 qrencode

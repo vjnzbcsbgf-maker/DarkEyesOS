@@ -18,6 +18,5 @@ onionshare
 # DNS-over-Tor helper + firewall
 nftables
 
-# Time sync over Tor instead of clearnet NTP (Tails-style secure clock)
-# (implemented via a systemd unit + this helper)
-tlsdate
+# Time sync over Tor is implemented by darkeyes-timesync (torsocks + curl over
+# Tor); no extra package needed. (tlsdate was removed from Debian.)
