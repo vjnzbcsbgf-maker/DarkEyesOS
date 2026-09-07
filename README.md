@@ -1,7 +1,20 @@
 # DarkEyesOS
 
-**A kernel-hardened, RAM-loaded, amnesic security distribution.**
-Debian-live based · Tor-by-default · optional encrypted persistence · minimal GNOME.
+**A Tails-based, kernel-hardened, RAM-loaded, amnesic security distribution.**
+Debian-live · Tor **+ I2P** · optional encrypted persistence · minimal GNOME · own identity.
+
+> ### Tails-based, tracks every Tails release
+>
+> DarkEyesOS replicates Tails' proven security architecture and **tracks Tails
+> releases** (7.12 and onward), while shipping its **own** branding, menus,
+> wallpapers, GRUB, and tools plus extra upgrades (Tor + I2P dual network, I2P
+> Browser, Dolphin, fastfetch). It does **not** remaster Tails' signed image
+> (that breaks verification and is brittle). Instead, `scripts/sync-tails.sh`
+> and the **Sync Tails baseline** workflow download a Tails release, **verify its
+> signature**, and extract its functional config (firewall, Tor, hardening,
+> package manifest) into `config/tails-base/<version>/` to base ours on — run on
+> demand and monthly so we stay current. See
+> [`config/tails-base/README.md`](config/tails-base/README.md).
 
 DarkEyesOS is a live operating system you flash to a USB stick and boot. It is
 designed around the same architecture that makes Tails effective — the whole

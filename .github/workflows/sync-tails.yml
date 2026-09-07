@@ -1,0 +1,57 @@
+name: Sync Tails baseline
+
+# Fetches a Tails release, verifies its signature, and extracts its functional
+# config into config/tails-base/<version>/, then opens a Pull Request. This is
+# how DarkEyesOS tracks Tails 7.12 and every future edition — bump the version
+# (or let the monthly schedule catch new releases) and review the diff.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Tails version to sync (e.g. 7.12)'
+        default: '7.12'
+      baseurl:
+        description: 'Override download base URL (optional)'
+        default: ''
+  schedule:
+    # Monthly nudge to check for a newer Tails baseline (Tails releases ~monthly).
+    - cron: '0 6 1 * *'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y squashfs-tools gpgv gnupg curl
+
+      - name: Fetch + verify + extract Tails config
+        env:
+          TAILS_VERSION: ${{ github.event.inputs.version || '7.12' }}
+          TAILS_BASEURL: ${{ github.event.inputs.baseurl }}
+        run: |
+          set -eux
+          sudo -E ./scripts/sync-tails.sh "${TAILS_VERSION}"
+          sudo chown -R "$(id -u):$(id -g)" config/tails-base
+
+      - name: Open a Pull Request with the new baseline
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: tails-sync/${{ github.event.inputs.version || '7.12' }}
+          title: "Sync Tails ${{ github.event.inputs.version || '7.12' }} baseline"
+          commit-message: "Sync Tails ${{ github.event.inputs.version || '7.12' }} functional config baseline"
+          body: |
+            Automated Tails baseline sync (signature-verified).
+
+            This PR adds/updates `config/tails-base/<version>/` with Tails'
+            functional configuration (firewall, Tor, session hardening, package
+            manifest) — no Tails branding/artwork. Review the diff and fold any
+            vetted improvements into `config/`, keeping DarkEyesOS' own menus and
+            branding.
+          add-paths: config/tails-base/**

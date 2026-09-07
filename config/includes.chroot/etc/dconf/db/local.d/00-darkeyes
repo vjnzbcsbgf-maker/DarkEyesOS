@@ -22,12 +22,21 @@ recent-files-max-age=0
 [org/gnome/desktop/search-providers]
 disable-external=true
 
+[org/gnome/desktop/lockdown]
+# Remove the lock-screen option entirely for the passwordless live user.
+disable-lock-screen=true
+disable-log-out=false
+
 [org/gnome/desktop/session]
-# Lock quickly when idle (amnesic + shoulder-surfing defense).
-idle-delay=uint32 300
+# NEVER auto-lock: the live user auto-logs in with NO password, so a lock screen
+# would be impossible to unlock (blank password is rejected) -> total lockout.
+# This was the v2.1 login bug. Amnesia comes from powering off (RAM wiped), not
+# from a screen lock. Users who set an admin password can still lock manually.
+idle-delay=uint32 0
 
 [org/gnome/desktop/screensaver]
-lock-enabled=true
+lock-enabled=false
+idle-activation-enabled=false
 lock-delay=uint32 0
 
 [org/gnome/desktop/media-handling]
