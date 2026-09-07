@@ -8,6 +8,19 @@ DST=/run/darkeyes/nftables.active
 
 mkdir -p /run/darkeyes
 
+# Pin DNS to Tor's DNSPort (via the firewall redirect). Done at boot rather than
+# build time so it never interferes with live-build's chroot teardown. If
+# resolv.conf is a symlink (e.g. to systemd-resolved), replace it with a real file.
+darkeyes_pin_resolv() {
+    if [ -L /etc/resolv.conf ]; then rm -f /etc/resolv.conf; fi
+    cat > /etc/resolv.conf <<'RESOLV'
+# DarkEyesOS: DNS is served by Tor's DNSPort via the firewall redirect.
+nameserver 127.0.0.1
+options edns0
+RESOLV
+}
+darkeyes_pin_resolv 2>/dev/null || true
+
 TOR_UID="$(id -u debian-tor 2>/dev/null || echo 0)"
 if [ "$TOR_UID" = "0" ]; then
     echo "darkeyes-firewall: debian-tor user not found; refusing to open network" >&2

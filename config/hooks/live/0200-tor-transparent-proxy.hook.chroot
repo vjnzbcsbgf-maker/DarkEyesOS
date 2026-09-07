@@ -12,15 +12,13 @@ systemctl enable darkeyes-firewall.service 2>/dev/null || true
 
 # --- Disable clearnet DNS resolvers ---------------------------------------------
 # All DNS must go through Tor's DNSPort (see /etc/tor/torrc + firewall redirect).
+# NOTE: we do NOT write or chattr +i /etc/resolv.conf here. live-build manages
+# /etc/resolv.conf during the build and restores it at chroot teardown; a build-
+# time immutable bit makes that restore fail ("mv: Operation not permitted") and
+# aborts the whole build. Instead, resolv.conf is pinned to 127.0.0.1 at BOOT by
+# darkeyes-firewall.service (see darkeyes-firewall-apply), and NetworkManager is
+# told not to touch it (dns=none in 00-darkeyes-mac.conf).
 systemctl disable systemd-resolved.service 2>/dev/null || true
-rm -f /etc/resolv.conf
-cat > /etc/resolv.conf <<'EOF'
-# DarkEyesOS: DNS is served by Tor's DNSPort via the firewall redirect.
-nameserver 127.0.0.1
-options edns0
-EOF
-# Prevent NetworkManager/dhcp from overwriting resolv.conf.
-chattr +i /etc/resolv.conf 2>/dev/null || true
 
 # --- Make sure IPv6 is disabled by default (avoids Tor-bypass leaks) ------------
 mkdir -p /etc/sysctl.d
