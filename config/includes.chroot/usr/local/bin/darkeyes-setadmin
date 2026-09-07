@@ -1,0 +1,17 @@
+#!/bin/sh
+# darkeyes-setadmin — root helper that sets the amnesia admin password and grants
+# sudo. Reads the new password from stdin (never from argv). Invoked as root via
+# the NOPASSWD sudoers rule (amnesia has no privilege until this runs), so the
+# desktop admin dialog can enable admin without a chicken-and-egg password prompt.
+# Physical-access trust model, same as Tails' greeter.
+set -eu
+
+LIVE_USER="amnesia"
+
+# Read the password from stdin (single line).
+IFS= read -r newpass || true
+[ -n "${newpass:-}" ] || { echo "empty password; aborting" >&2; exit 1; }
+
+printf '%s:%s\n' "$LIVE_USER" "$newpass" | chpasswd
+usermod -aG sudo "$LIVE_USER"
+echo "admin enabled for $LIVE_USER"

@@ -1,0 +1,42 @@
+#!/bin/sh
+# darkeyes-admin-setup — optional admin password, as a SAFE desktop dialog
+# (replaces the pre-boot console greeter that could hang boot). Runs once per
+# session from autostart, and can be re-run any time from the menu.
+set -u
+
+STAMP="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/darkeyes-admin.done"
+FORCE=0
+[ "${1:-}" = "--force" ] && FORCE=1
+[ "$FORCE" = 0 ] && [ -f "$STAMP" ] && exit 0
+: > "$STAMP" 2>/dev/null || true
+
+command -v zenity >/dev/null 2>&1 || exit 0
+
+# Already have sudo? Then admin is set; only continue on explicit --force.
+if [ "$FORCE" = 0 ] && id -nG 2>/dev/null | tr ' ' '\n' | grep -qx sudo; then
+    exit 0
+fi
+
+zenity --question --width=460 --title="DarkEyesOS — Administration" \
+  --ok-label="Set password" --cancel-label="Skip (locked down)" \
+  --text="<b>Set an administration password?</b>\n\nNeeded for admin tasks (persistence setup, firewall, installing software).\n\n• <b>Set password</b> — enables sudo for this session only.\n• <b>Skip</b> — no admin access; the system stays fully locked down.\n\nEither way, nothing is saved unless you unlock Persistence." \
+  2>/dev/null || exit 0
+
+while : ; do
+    p1="$(zenity --password --title='Admin password' 2>/dev/null)" || exit 0
+    p2="$(zenity --password --title='Confirm admin password' 2>/dev/null)" || exit 0
+    if [ -z "$p1" ]; then
+        zenity --warning --width=320 --text="Empty password — admin stays disabled." 2>/dev/null || true
+        exit 0
+    fi
+    if [ "$p1" = "$p2" ]; then
+        if printf '%s\n' "$p1" | sudo -n /usr/local/bin/darkeyes-setadmin >/dev/null 2>&1; then
+            zenity --info --width=340 --title="Administration" \
+              --text="Admin password set. You can now use sudo (and set up Persistence)." 2>/dev/null || true
+        else
+            zenity --error --width=340 --text="Could not enable admin. Try from a terminal:\n  printf 'PASS\\n' | sudo /usr/local/bin/darkeyes-setadmin" 2>/dev/null || true
+        fi
+        break
+    fi
+    zenity --warning --width=320 --text="Passwords did not match — try again." 2>/dev/null || true
+done

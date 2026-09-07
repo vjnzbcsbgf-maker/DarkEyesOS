@@ -113,13 +113,15 @@ The benefit here is **broader reach and compartmentalization**, not naive
   password) — consistent with an amnesic, RAM-only system.
 - The **root account is locked** — there is no root password and you cannot log
   in as root or `su` to it.
-- On boot, the **DarkEyes Greeter** (console, before the desktop) asks whether to
-  set an **administration password**:
+- After the desktop loads, **Set Admin Password** pops up (and is in the menu)
+  to optionally enable admin:
   - Set one → `amnesia` gains `sudo` for that session (needed for persistence
     setup, firewall reloads, etc.).
   - Skip it → the system has **no admin/root path at all** (fully locked down),
     Tails-style.
 - Admin state is per-session and never persisted; every boot starts fresh.
+- *(v2.1: the admin step moved from a pre-boot console greeter to this desktop
+  dialog, because the console greeter could hang boot waiting for input.)*
 
 ## License
 

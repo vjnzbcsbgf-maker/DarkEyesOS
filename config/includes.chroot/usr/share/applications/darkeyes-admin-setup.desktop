@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Set Admin Password
+Comment=Enable administration (sudo) for this session
+Exec=darkeyes-admin-setup --force
+Icon=dialog-password
+Terminal=false
+Categories=System;Settings;Security;
+Keywords=admin;sudo;root;password;

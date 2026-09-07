@@ -11,12 +11,22 @@ APT_PROXY="${DARKEYES_APT_PROXY:-}"
 
 # Kernel-hardening boot parameters baked into the bootloader entries.
 # See docs/SECURITY.md for the rationale behind each one.
+#
+# NOTE (v2.1): removed several params that could STALL or HANG boot on real
+# hardware, especially on slow USB:
+#   - random.trust_cpu=off   -> made boot wait for entropy (multi-minute hang)
+#   - module.sig_enforce=1   -> could block a needed driver and stall
+#   - nosmt (from mitigations)-> halves CPU, much slower
+#   - quiet / loglevel=0      -> hid all boot output, so a slow boot looked dead
+# The kept params are the low-cost memory/kernel hardening that does not delay
+# boot. Module integrity is still enforced by Secure Boot + lockdown when
+# Secure Boot is enabled.
 DARKEYES_BOOTAPPEND="\
 boot=live components \
 toram \
 noswap \
 union=overlay \
-quiet splash \
+splash \
 apparmor=1 security=apparmor \
 lockdown=confidentiality \
 slab_nomerge \
@@ -26,12 +36,8 @@ randomize_kstack_offset=1 \
 pti=on \
 vsyscall=none \
 debugfs=off \
-module.sig_enforce=1 \
-mitigations=auto,nosmt \
-spectre_v2=on spec_store_bypass_disable=on \
-mce=0 \
-loglevel=0 \
-random.trust_cpu=off"
+mitigations=auto \
+spectre_v2=on spec_store_bypass_disable=on"
 
 APT_PROXY_OPT=""
 if [ -n "${APT_PROXY}" ]; then

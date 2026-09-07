@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=DarkEyes Administration Setup
+Comment=Optionally set an admin password (first run)
+Exec=darkeyes-admin-setup
+Terminal=false
+X-GNOME-Autostart-enabled=true
+NoDisplay=true
+OnlyShowIn=GNOME;
+X-GNOME-Autostart-Delay=6
