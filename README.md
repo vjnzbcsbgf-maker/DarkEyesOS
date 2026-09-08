@@ -122,8 +122,9 @@ The benefit here is **broader reach and compartmentalization**, not naive
 
 ## First boot, login, and admin access
 
-- The live user is **`amnesia`** and the desktop **auto-logs in** (no desktop
-  password) — consistent with an amnesic, RAM-only system.
+- The live user is **`amnesia`** and the desktop **auto-logs in**. If a login
+  screen ever appears, log in as **`amnesia`** with password **`live`** (set at
+  boot as a reliable fallback; change it after boot if you enable admin).
 - The **root account is locked** — there is no root password and you cannot log
   in as root or `su` to it.
 - After the desktop loads, **Set Admin Password** pops up (and is in the menu)

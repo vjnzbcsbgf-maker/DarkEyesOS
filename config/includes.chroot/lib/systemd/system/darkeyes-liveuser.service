@@ -1,0 +1,14 @@
+[Unit]
+Description=DarkEyesOS: ensure the live user can log in (password + autologin)
+# Run after live-config has created the user, before the display manager starts.
+After=live-config.service systemd-user-sessions.service
+Before=display-manager.service gdm.service gdm3.service
+Wants=live-config.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/darkeyes-liveuser
+
+[Install]
+WantedBy=graphical.target

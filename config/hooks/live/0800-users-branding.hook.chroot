@@ -44,10 +44,10 @@ chmod 0440 /etc/sudoers.d/darkeyes
 
 # --- OS branding ----------------------------------------------------------------
 cat > /etc/os-release <<'EOF'
-PRETTY_NAME="DarkEyesOS 2.2 (Tails-based · amnesic · Tor + I2P)"
+PRETTY_NAME="DarkEyesOS 2.3 (Tails-based · amnesic · Tor + I2P)"
 NAME="DarkEyesOS"
-VERSION_ID="2.2"
-VERSION="2.2 (Tails-based, Debian-live)"
+VERSION_ID="2.3"
+VERSION="2.3 (Tails-based, Debian-live)"
 ID=darkeyesos
 ID_LIKE=debian
 HOME_URL="https://example.invalid/darkeyesos"

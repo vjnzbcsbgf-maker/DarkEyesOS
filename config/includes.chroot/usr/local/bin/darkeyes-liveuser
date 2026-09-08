@@ -1,0 +1,42 @@
+#!/bin/sh
+# darkeyes-liveuser — guarantee the live user can log in.
+# Runs at boot AFTER live-config has created 'amnesia' (which it makes with a
+# disabled/empty password) and BEFORE the display manager starts. It:
+#   1. ensures amnesia exists and is UNLOCKED with a known password,
+#   2. forces GDM auto-login,
+#   3. suppresses gnome-initial-setup,
+# so the desktop either auto-logs in, or is reachable with amnesia / live.
+set -u
+
+U=amnesia
+PW=live   # documented fallback password; change after boot if you set admin
+
+# 1. Ensure the user exists and has a usable, known password.
+id "$U" >/dev/null 2>&1 || useradd -m -s /bin/bash \
+    -G audio,cdrom,dip,video,plugdev,netdev,bluetooth "$U" 2>/dev/null || true
+echo "${U}:${PW}" | chpasswd 2>/dev/null || true
+passwd -u "$U" 2>/dev/null || true          # make sure it isn't locked
+usermod -s /bin/bash "$U" 2>/dev/null || true
+
+# 2. Force GDM auto-login (belt-and-suspenders with the baked-in daemon.conf).
+mkdir -p /etc/gdm3
+cat > /etc/gdm3/daemon.conf <<EOF
+[daemon]
+WaylandEnable=true
+AutomaticLoginEnable=true
+AutomaticLogin=${U}
+[security]
+DisallowTCP=true
+[greeter]
+IncludeAll=false
+EOF
+
+# 3. Suppress the GNOME initial-setup wizard for the live user.
+HOME_DIR="$(getent passwd "$U" | cut -d: -f6)"
+if [ -n "${HOME_DIR:-}" ]; then
+    mkdir -p "$HOME_DIR/.config"
+    echo "yes" > "$HOME_DIR/.config/gnome-initial-setup-done"
+    chown -R "$U":"$U" "$HOME_DIR/.config" 2>/dev/null || true
+fi
+
+exit 0

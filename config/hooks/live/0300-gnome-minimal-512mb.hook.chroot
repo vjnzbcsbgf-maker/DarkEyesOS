@@ -51,4 +51,14 @@ DisallowTCP=true
 IncludeAll=false
 EOF
 
+# --- Guarantee the live user can log in (password + autologin at boot) -----------
+systemctl enable darkeyes-liveuser.service 2>/dev/null || true
+
+# --- Suppress the GNOME initial-setup wizard (would look like a login/welcome) ---
+systemctl mask gnome-initial-setup-first-login.service 2>/dev/null || true
+systemctl mask gnome-initial-setup-copy-worker.service 2>/dev/null || true
+rm -f /etc/xdg/autostart/gnome-initial-setup-first-login.desktop 2>/dev/null || true
+mkdir -p /etc/skel/.config
+echo "yes" > /etc/skel/.config/gnome-initial-setup-done
+
 echo "[darkeyes] 0300 done"
